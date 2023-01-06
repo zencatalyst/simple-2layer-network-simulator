@@ -1,6 +1,6 @@
 
 #include "BidirectionalMultimessageSimulation.hpp"
-#include <iostream>
+#include <ostream>
 #include <iomanip>
 #include <syncstream>
 #include <string>
@@ -21,69 +21,72 @@ namespace simple_network_simulation
 
 namespace
 {
-	bool isChannelFaulty;
 
-	using std::chrono_literals::operator""ms;
+bool isChannelFaulty;
 
-	constexpr auto node1_process1_application_layer_default_delay { 450ms };
-	constexpr auto node1_process2_application_layer_default_delay { 500ms };
-	constexpr auto node2_process1_application_layer_default_delay { 550ms };
-	constexpr auto node2_process2_application_layer_default_delay { 440ms };
-	constexpr auto node1_transport_to_layer_default_delay { 990ms };
-	constexpr auto node1_transport_from_layer_default_delay { 1110ms };
-	constexpr auto node2_transport_to_layer_default_delay { 1010ms };
-	constexpr auto node2_transport_from_layer_default_delay { 1070ms };
-	constexpr auto channel_default_delay { 1500ms };
+using std::chrono_literals::operator""ms;
 
-	constinit auto node1_process1_application_layer_delay { 0ms };
-	constinit auto node1_process2_application_layer_delay { 0ms };
-	constinit auto node2_process1_application_layer_delay { 0ms };
-	constinit auto node2_process2_application_layer_delay { 0ms };
-	constinit auto node1_transport_to_layer_delay { 0ms };
-	constinit auto node1_transport_from_layer_delay { 0ms };
-	constinit auto node2_transport_to_layer_delay { 0ms };
-	constinit auto node2_transport_from_layer_delay { 0ms };
-	constinit auto channel_delay { 0ms };
+constexpr auto node1_process1_application_layer_default_delay { 450ms };
+constexpr auto node1_process2_application_layer_default_delay { 500ms };
+constexpr auto node2_process1_application_layer_default_delay { 550ms };
+constexpr auto node2_process2_application_layer_default_delay { 440ms };
+constexpr auto node1_transport_to_layer_default_delay { 990ms };
+constexpr auto node1_transport_from_layer_default_delay { 1110ms };
+constexpr auto node2_transport_to_layer_default_delay { 1010ms };
+constexpr auto node2_transport_from_layer_default_delay { 1070ms };
+constexpr auto channel_default_delay { 1500ms };
 
-	struct [[ nodiscard ]] UiStrings
-	{
-		std::string application_layer_text_head { ( std::ostringstream { } << std::setfill( '*' ) << std::setw( 24 )
-																		   << "[Application Layer]"
-																		   << std::setfill( '*' ) << std::setw( 53 )
+constinit auto node1_process1_application_layer_delay { 0ms };
+constinit auto node1_process2_application_layer_delay { 0ms };
+constinit auto node2_process1_application_layer_delay { 0ms };
+constinit auto node2_process2_application_layer_delay { 0ms };
+constinit auto node1_transport_to_layer_delay { 0ms };
+constinit auto node1_transport_from_layer_delay { 0ms };
+constinit auto node2_transport_to_layer_delay { 0ms };
+constinit auto node2_transport_from_layer_delay { 0ms };
+constinit auto channel_delay { 0ms };
+
+struct [[ nodiscard ]] UiStrings
+{
+	const std::string application_layer_text_head { ( std::ostringstream { } << std::setfill( '*' ) << std::setw( 24 )
+																			 << "[Application Layer]"
+																			 << std::setfill( '*' ) << std::setw( 53 )
+																			 << "\n\n" ).str( ) };
+
+	const std::string application_layer_text_tail { ( std::ostringstream { } << '\n'
+																			 << std::setfill( '*' ) << std::setw( 77 )
+																			 << "\n\n" ).str( ) };
+
+	const std::string transport_layer_text_head { ( std::ostringstream { } << std::setfill( '-' ) << std::setw( 22 )
+																		   << "[Transport Layer]"
+																		   << std::setfill( '-' ) << std::setw( 55 )
 																		   << "\n\n" ).str( ) };
 
-		std::string application_layer_text_tail { ( std::ostringstream { } << '\n'
-																		   << std::setfill( '*' ) << std::setw( 77 )
+	const std::string transport_layer_text_tail { ( std::ostringstream { } << '\n'
+																		   << std::setfill( '-' ) << std::setw( 77 )
 																		   << "\n\n" ).str( ) };
 
-		std::string transport_layer_text_head { ( std::ostringstream { } << std::setfill( '-' ) << std::setw( 22 )
-																		 << "[Transport Layer]"
-																		 << std::setfill( '-' ) << std::setw( 55 )
-																		 << "\n\n" ).str( ) };
+	const std::string channel_text_head { ( std::ostringstream { } << std::setfill( '~' ) << std::setw( 14 )
+																   << "[Channel]"
+																   << std::setfill( '~' ) << std::setw( 63 )
+																   << "\n\n" ).str( ) };
 
-		std::string transport_layer_text_tail { ( std::ostringstream { } << '\n'
-																		 << std::setfill( '-' ) << std::setw( 77 )
-																		 << "\n\n" ).str( ) };
+	const std::string channel_text_tail { ( std::ostringstream { } << '\n'
+																   << std::setfill( '~' ) << std::setw( 77 )
+																   << "\n\n" ).str( ) };
+};
 
-		std::string channel_text_head { ( std::ostringstream { } << std::setfill( '~' ) << std::setw( 14 )
-																 << "[Channel]"
-																 << std::setfill( '~' ) << std::setw( 63 )
-																 << "\n\n" ).str( ) };
+const UiStrings ui_strings { UiStrings { } };
 
-		std::string channel_text_tail { ( std::ostringstream { } << '\n'
-																 << std::setfill( '~' ) << std::setw( 77 )
-																 << "\n\n" ).str( ) };
-	};
-
-	const UiStrings ui_strings { UiStrings { } };
 }
 
 std::random_device rand_dev { };
 
 
-[[ nodiscard ]] payload_t node1_process1( const uint32_t process_num,
-										  const std::pair<payload_t, bool>& incoming_payload,
-										  std::osyncstream& out_sync_stream )
+[[ nodiscard ]] payload_t
+node1_process1( const uint32_t process_num,
+				const std::pair<payload_t, bool>& incoming_payload,
+				std::osyncstream& out_sync_stream )
 {
 	payload_t payload;
 	payload.m_source_port_num = process_num;
@@ -167,9 +170,10 @@ std::random_device rand_dev { };
 	return payload;
 }
 
-[[ nodiscard ]] payload_t node1_process2( const uint32_t process_num,
-										  const std::pair<payload_t, bool>& incoming_payload,
-										  std::osyncstream& out_sync_stream )
+[[ nodiscard ]] payload_t
+node1_process2( const uint32_t process_num,
+				const std::pair<payload_t, bool>& incoming_payload,
+				std::osyncstream& out_sync_stream )
 {
 	payload_t payload;
 	payload.m_source_port_num = process_num;
@@ -253,9 +257,10 @@ std::random_device rand_dev { };
 	return payload;
 }
 
-[[ nodiscard ]] payload_t node2_process1( const uint32_t process_num,
-										  const std::pair<payload_t, bool>& incoming_payload,
-										  std::osyncstream& out_sync_stream )
+[[ nodiscard ]] payload_t
+node2_process1( const uint32_t process_num,
+				const std::pair<payload_t, bool>& incoming_payload,
+				std::osyncstream& out_sync_stream )
 {
 	payload_t payload;
 	payload.m_source_port_num = process_num;
@@ -328,9 +333,10 @@ std::random_device rand_dev { };
 	return payload;
 }
 
-[[ nodiscard ]] payload_t node2_process2( const uint32_t process_num,
-										  const std::pair<payload_t, bool>& incoming_payload,
-										  std::osyncstream& out_sync_stream )
+[[ nodiscard ]] payload_t
+node2_process2( const uint32_t process_num,
+				const std::pair<payload_t, bool>& incoming_payload,
+				std::osyncstream& out_sync_stream )
 {
 	payload_t payload;
 	payload.m_source_port_num = process_num;
@@ -403,8 +409,9 @@ std::random_device rand_dev { };
 	return payload;
 }
 
-[[ nodiscard ]] segment_t channel( segment_t segment,
-								   std::osyncstream& out_sync_stream )
+[[ nodiscard ]] segment_t
+channel( segment_t segment,
+		 std::osyncstream& out_sync_stream )
 {
 	out_sync_stream << ui_strings.channel_text_head
 					<< "channel received: <" << segment
@@ -437,8 +444,9 @@ std::random_device rand_dev { };
 	return segment;
 }
 
-[[ nodiscard ]] segment_t node1_transport_to_channel( const payload_t payload,
-													  std::osyncstream& out_sync_stream )
+[[ nodiscard ]] segment_t
+node1_transport_to_channel( const payload_t payload,
+							std::osyncstream& out_sync_stream )
 {
 	out_sync_stream << ui_strings.transport_layer_text_head
 					<< "node1_transport received message: <" << payload.m_message
@@ -497,8 +505,9 @@ std::random_device rand_dev { };
 	return segment;
 }
 
-[[ nodiscard ]] std::pair<payload_t, bool> node1_transport_from_channel( const segment_t segment,
-																		 std::osyncstream& out_sync_stream )
+[[ nodiscard ]] std::pair<payload_t, bool>
+node1_transport_from_channel( const segment_t segment,
+							  std::osyncstream& out_sync_stream )
 {
 	std::pair<payload_t, bool> result { };
 	auto& [ payload, isIntact ] { result };
@@ -571,8 +580,9 @@ std::random_device rand_dev { };
 	return result;
 }
 
-[[ nodiscard ]] segment_t node2_transport_to_channel( const payload_t payload,
-													  std::osyncstream& out_sync_stream )
+[[ nodiscard ]] segment_t
+node2_transport_to_channel( const payload_t payload,
+							std::osyncstream& out_sync_stream )
 {
 	out_sync_stream << ui_strings.transport_layer_text_head
 					<< "node2_transport received message: <" << payload.m_message
@@ -631,8 +641,9 @@ std::random_device rand_dev { };
 	return segment;
 }
 
-[[ nodiscard ]] std::pair<payload_t, bool> node2_transport_from_channel( const segment_t segment,
-																		 std::osyncstream& out_sync_stream )
+[[ nodiscard ]] std::pair<payload_t, bool>
+node2_transport_from_channel( const segment_t segment,
+							  std::osyncstream& out_sync_stream )
 {
 	std::pair<payload_t, bool> result { };
 	auto& [ payload, isIntact ] { result };
@@ -705,10 +716,11 @@ std::random_device rand_dev { };
 	return result;
 }
 
-void execute_connection1( const uint32_t node1_process1_num, const uint32_t node2_process2_num )
+void
+execute_connection1( const uint32_t node1_process1_num,
+					 const uint32_t node2_process2_num,
+					 std::osyncstream& out_sync_stream )
 {
-	std::osyncstream out_sync_stream { std::cout };
-
 	std::pair<payload_t, bool> node1_process1_payload_from_transport { payload_t { }, true };
 	std::pair<payload_t, bool> node2_process2_payload_from_transport { payload_t { }, true };
 
@@ -758,10 +770,11 @@ void execute_connection1( const uint32_t node1_process1_num, const uint32_t node
 	}
 }
 
-void execute_connection2( const uint32_t node1_process2_num, const uint32_t node2_process1_num )
+void
+execute_connection2( const uint32_t node1_process2_num,
+					 const uint32_t node2_process1_num,
+					 std::osyncstream& out_sync_stream )
 {
-	std::osyncstream out_sync_stream { std::cout };
-
 	std::pair<payload_t, bool> node1_process2_payload_from_transport { payload_t { }, true };
 	std::pair<payload_t, bool> node2_process1_payload_from_transport { payload_t { }, true };
 
@@ -811,7 +824,7 @@ void execute_connection2( const uint32_t node1_process2_num, const uint32_t node
 	}
 }
 
-bool initialize_program( const std::span<const char* const> command_line_arguments )
+bool initialize_program( const std::span<const char* const> command_line_arguments, std::ostream& out_stream )
 {
 	bool hasError { false }; 
 
@@ -863,7 +876,7 @@ bool initialize_program( const std::span<const char* const> command_line_argumen
 		else
 		{
 			hasError = true;
-			std::cerr << "\nInvalid command-line argument\n\n";
+			out_stream << "\nInvalid command-line argument\n\n";
 
 			return hasError;
 		}
