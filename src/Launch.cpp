@@ -1,10 +1,15 @@
 
 #include <iostream>
+#include <system_error>
 #include <span>
+#include <syncstream>
 #include <thread>
 #include <functional>
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
+#include <cstdio>
+#include <fmt/core.h>
 #include "BidirectionalMultimessageSimulation.hpp"
 
 
@@ -13,7 +18,8 @@ namespace sns = simple_network_simulation;
 namespace simple_network_simulation
 {
 
-bool initialize_program( const std::span<const char* const> command_line_arguments, std::ostream& out_stream );
+[[ nodiscard ]] std::error_condition
+initialize_program( const std::span<const char* const> command_line_arguments ) noexcept;
 
 }
 
@@ -25,15 +31,16 @@ void inline static launch( const int argc, const char* const* const argv, int& e
 
 	const std::span<const char* const> command_line_arguments { argv, static_cast<size_t>( argc ) };
 
-	const bool hasError { sns::initialize_program( command_line_arguments, std::cerr ) };
-	if ( hasError )
+	const std::error_condition err_cond { sns::initialize_program( command_line_arguments ) };
+	if ( err_cond )
 	{
 		exit_code_OUT = EXIT_FAILURE;
-		std::cerr << "exiting program...\n\n";
+		fmt::print( stderr, "\n{}\n\nexiting program...\n\n", err_cond.message( ) );
 		return;
 	}
 
-	std::cout << "\n\nConnection simulation started...\n\n\n";
+	fmt::print( "\n\nConnection simulation started...\n\n\n" );
+	std::fflush( stdout );
 
 	{
 		const uint32_t node1_process1_num { 5001 };
@@ -50,7 +57,10 @@ void inline static launch( const int argc, const char* const* const argv, int& e
 										  std::ref( connection2_thread_out_sync_stream ) };
 	}
 
-	std::cout << "\nConnection simulation finished...\n\n\n" << std::flush;
+	std::flush( std::cout );
+
+	fmt::print( "\nConnection simulation finished...\n\n\n" );
+	std::fflush( stdout );
 
 	exit_code_OUT = EXIT_SUCCESS;
 	return;
@@ -60,10 +70,10 @@ int main( int argc, char* argv[] )
 {
 	int exit_code { };
 
-	const auto registration_result { std::atexit( [ ]( ){ std::clog << "Program execution ended.\n\n"; } ) };
+	const auto registration_result { std::atexit( [ ]( ){ fmt::print( stderr, "Program execution ended.\n\n" ); } ) };
 	if ( registration_result != 0 )
 	{
-		std::cerr << "\nRegistration failed.\n\n";
+		fmt::print( stderr, "\nRegistration failed.\n\n" );
 		return exit_code = EXIT_FAILURE;
 	}
 

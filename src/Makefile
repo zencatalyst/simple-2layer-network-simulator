@@ -8,7 +8,7 @@ CXXFLAGS = -c -fpie -std=c++23 -Wall -Wextra -Wpedantic -Wconversion -Wsign-conv
 #
 # Linker flags
 #
-LDFLAGS = -pie
+LDFLAGS = -lfmt -pie
 
 #
 # Project files

@@ -1,16 +1,16 @@
 
 #include "BidirectionalMultimessageSimulation.hpp"
-#include <ostream>
-#include <iomanip>
 #include <syncstream>
 #include <string>
-#include <sstream>
 #include <string_view>
 #include <span>
 #include <utility>
 #include <random>
 #include <thread>
+#include <system_error>
 #include <cstddef>
+#include <cstdint>
+#include <fmt/core.h>
 
 
 using std::size_t;
@@ -48,35 +48,17 @@ constinit auto channel_delay { 0ms };
 
 struct [[ nodiscard ]] UiStrings
 {
-	const std::string application_layer_text_head { ( std::ostringstream { } << std::setfill( '*' ) << std::setw( 24 )
-																			 << "[Application Layer]"
-																			 << std::setfill( '*' ) << std::setw( 53 )
-																			 << "\n\n" ).str( ) };
+	const std::string application_layer_text_head { fmt::format( "{:*>5}[Application Layer]{:*>51}\n\n", "", "" ) };
+	const std::string application_layer_text_tail { fmt::format( "\n{:*>75}\n\n", "" ) };
 
-	const std::string application_layer_text_tail { ( std::ostringstream { } << '\n'
-																			 << std::setfill( '*' ) << std::setw( 77 )
-																			 << "\n\n" ).str( ) };
+	const std::string transport_layer_text_head { fmt::format( "{:->5}[Transport Layer]{:->53}\n\n", "", "" ) };
+	const std::string transport_layer_text_tail { fmt::format( "\n{:->75}\n\n", "" ) };
 
-	const std::string transport_layer_text_head { ( std::ostringstream { } << std::setfill( '-' ) << std::setw( 22 )
-																		   << "[Transport Layer]"
-																		   << std::setfill( '-' ) << std::setw( 55 )
-																		   << "\n\n" ).str( ) };
-
-	const std::string transport_layer_text_tail { ( std::ostringstream { } << '\n'
-																		   << std::setfill( '-' ) << std::setw( 77 )
-																		   << "\n\n" ).str( ) };
-
-	const std::string channel_text_head { ( std::ostringstream { } << std::setfill( '~' ) << std::setw( 14 )
-																   << "[Channel]"
-																   << std::setfill( '~' ) << std::setw( 63 )
-																   << "\n\n" ).str( ) };
-
-	const std::string channel_text_tail { ( std::ostringstream { } << '\n'
-																   << std::setfill( '~' ) << std::setw( 77 )
-																   << "\n\n" ).str( ) };
+	const std::string channel_text_head { fmt::format( "{:~>5}[Channel]{:~>61}\n\n", "", "" ) };
+	const std::string channel_text_tail { fmt::format( "\n{:~>75}\n\n", "" ) };
 };
 
-const UiStrings ui_strings { UiStrings { } };
+const UiStrings ui_strings { };
 
 }
 
@@ -824,10 +806,9 @@ execute_connection2( const uint32_t node1_process2_num,
 	}
 }
 
-bool initialize_program( const std::span<const char* const> command_line_arguments, std::ostream& out_stream )
+[[ nodiscard ]] std::error_condition
+initialize_program( const std::span<const char* const> command_line_arguments ) noexcept
 {
-	bool hasError { false }; 
-
 	constexpr std::string_view layer_delays_on_arg { "-layer-delays=on" };
 	constexpr std::string_view layer_delays_off_arg { "-layer-delays=off" };
 	constexpr std::string_view faulty_channel_yes_arg { "-faulty-channel=yes" };
@@ -875,14 +856,11 @@ bool initialize_program( const std::span<const char* const> command_line_argumen
 		}
 		else
 		{
-			hasError = true;
-			out_stream << "\nInvalid command-line argument\n\n";
-
-			return hasError;
+			return std::error_condition { std::errc::invalid_argument };
 		}
 	}
 
-	return hasError;
+	return std::error_condition { };
 }
 
 }

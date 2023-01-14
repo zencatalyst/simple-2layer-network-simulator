@@ -1,10 +1,11 @@
 
 #pragma once
 
-#include <syncstream>
 #include <bitset>
 #include <utility>
+#include <syncstream>
 #include <cstddef>
+#include <cstdint>
 
 
 namespace simple_network_simulation
