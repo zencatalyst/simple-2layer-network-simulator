@@ -1,7 +1,5 @@
 
 #include "BidirectionalMultimessageSimulation.hpp"
-#include <syncstream>
-#include <string>
 #include <string_view>
 #include <span>
 #include <utility>
@@ -46,19 +44,25 @@ constinit auto node2_transport_to_layer_delay { 0ms };
 constinit auto node2_transport_from_layer_delay { 0ms };
 constinit auto channel_delay { 0ms };
 
-struct [[ nodiscard ]] UiStrings
+namespace ui_strings
 {
-	const std::string application_layer_text_head { fmt::format( "{:*>5}[Application Layer]{:*>51}\n\n", "", "" ) };
-	const std::string application_layer_text_tail { fmt::format( "\n{:*>75}\n\n", "" ) };
 
-	const std::string transport_layer_text_head { fmt::format( "{:->5}[Transport Layer]{:->53}\n\n", "", "" ) };
-	const std::string transport_layer_text_tail { fmt::format( "\n{:->75}\n\n", "" ) };
+constexpr std::string_view application_layer_text_head { "*****[Application Layer]****************"
+														 "***********************************\n\n" };
+constexpr std::string_view application_layer_text_tail { "****************************************"
+														 "***********************************\n\n" };
 
-	const std::string channel_text_head { fmt::format( "{:~>5}[Channel]{:~>61}\n\n", "", "" ) };
-	const std::string channel_text_tail { fmt::format( "\n{:~>75}\n\n", "" ) };
-};
+constexpr std::string_view transport_layer_text_head { "-----[Transport Layer]------------------"
+													   "-----------------------------------\n\n" };
+constexpr std::string_view transport_layer_text_tail { "----------------------------------------"
+													   "-----------------------------------\n\n" };
 
-const UiStrings ui_strings { };
+constexpr std::string_view channel_text_head { "~~~~~[Channel]~~~~~~~~~~~~~~~~~~~~~~~~~~"
+											   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" };
+constexpr std::string_view channel_text_tail { "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+											   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" };
+
+}
 
 }
 
@@ -67,8 +71,7 @@ std::random_device rand_dev { };
 
 [[ nodiscard ]] payload_t
 node1_process1( const uint32_t process_num,
-				const std::pair<payload_t, bool>& incoming_payload,
-				std::osyncstream& out_sync_stream )
+				const std::pair<payload_t, bool>& incoming_payload )
 {
 	payload_t payload;
 	payload.m_source_port_num = process_num;
@@ -77,13 +80,11 @@ node1_process1( const uint32_t process_num,
 
 	if ( isIntact )
 	{
-		out_sync_stream << ui_strings.application_layer_text_head
-						<< "node1_process1 received message: <" << received_payload.m_message
-						<< "> from source #" << received_payload.m_source_port_num
-						<< '\n'
-						<< ui_strings.application_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node1_process1 received message: <{1}> from source #{2}\n\n{3}",
+					ui_strings::application_layer_text_head,
+					received_payload.m_message.to_string( ),
+					received_payload.m_source_port_num,
+					ui_strings::application_layer_text_tail );
 
 		if ( received_payload.m_message == 0b1001'1111 ) [[ unlikely ]]
 		{
@@ -118,35 +119,28 @@ node1_process1( const uint32_t process_num,
 
 		std::this_thread::sleep_for( node1_process1_application_layer_delay );
 
-		out_sync_stream << ui_strings.application_layer_text_head
-						<< "node1_process1 is sending message: <" << payload.m_message
-						<< "> to destination #" << payload.m_destination_port_num
-						<< '\n'
-						<< ui_strings.application_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node1_process1 is sending message: <{1}> to destination #{2}\n\n{3}",
+					ui_strings::application_layer_text_head,
+					payload.m_message.to_string( ),
+					payload.m_destination_port_num,
+					ui_strings::application_layer_text_tail );
 	}
 	else
 	{
-		out_sync_stream << ui_strings.application_layer_text_head
-						<< "node1_process1 received corrupt message: <" << received_payload.m_message
-						<< ">"
-						<< '\n'
-						<< ui_strings.application_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node1_process1 received corrupt message: <{1}>\n\n{2}",
+					ui_strings::application_layer_text_head,
+					received_payload.m_message.to_string( ),
+					ui_strings::application_layer_text_tail );
 
 		payload.m_destination_port_num = 0;
 
 		std::this_thread::sleep_for( node1_process1_application_layer_delay );
 
-		out_sync_stream << ui_strings.application_layer_text_head
-						<< "node1_process1 is sending message: <" << payload.m_message
-						<< "> to destination #" << payload.m_destination_port_num
-						<< '\n'
-						<< ui_strings.application_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node1_process1 is sending message: <{1}> to destination #{2}\n\n{3}",
+					ui_strings::application_layer_text_head,
+					payload.m_message.to_string( ),
+					payload.m_destination_port_num,
+					ui_strings::application_layer_text_tail );
 	}
 
 	return payload;
@@ -154,8 +148,7 @@ node1_process1( const uint32_t process_num,
 
 [[ nodiscard ]] payload_t
 node1_process2( const uint32_t process_num,
-				const std::pair<payload_t, bool>& incoming_payload,
-				std::osyncstream& out_sync_stream )
+				const std::pair<payload_t, bool>& incoming_payload )
 {
 	payload_t payload;
 	payload.m_source_port_num = process_num;
@@ -164,13 +157,11 @@ node1_process2( const uint32_t process_num,
 
 	if ( isIntact )
 	{
-		out_sync_stream << ui_strings.application_layer_text_head
-						<< "node1_process2 received message: <" << received_payload.m_message
-						<< "> from source #" << received_payload.m_source_port_num
-						<< '\n'
-						<< ui_strings.application_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node1_process2 received message: <{1}> from source #{2}\n\n{3}",
+					ui_strings::application_layer_text_head,
+					received_payload.m_message.to_string( ),
+					received_payload.m_source_port_num,
+					ui_strings::application_layer_text_tail );
 
 		if ( received_payload.m_message == 0b1000'1111 ) [[ unlikely ]]
 		{
@@ -205,35 +196,28 @@ node1_process2( const uint32_t process_num,
 
 		std::this_thread::sleep_for( node1_process2_application_layer_delay );
 
-		out_sync_stream << ui_strings.application_layer_text_head
-						<< "node1_process2 is sending message: <" << payload.m_message
-						<< "> to destination #" << payload.m_destination_port_num
-						<< '\n'
-						<< ui_strings.application_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node1_process2 is sending message: <{1}> to destination #{2}\n\n{3}",
+					ui_strings::application_layer_text_head,
+					payload.m_message.to_string( ),
+					payload.m_destination_port_num,
+					ui_strings::application_layer_text_tail );
 	}
 	else
 	{
-		out_sync_stream << ui_strings.application_layer_text_head
-						<< "node1_process2 received corrupt message: <" << received_payload.m_message
-						<< ">"
-						<< '\n'
-						<< ui_strings.application_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node1_process2 received corrupt message: <{1}>\n\n{2}",
+					ui_strings::application_layer_text_head,
+					received_payload.m_message.to_string( ),
+					ui_strings::application_layer_text_tail );
 
 		payload.m_destination_port_num = 0;
 
 		std::this_thread::sleep_for( node1_process2_application_layer_delay );
 
-		out_sync_stream << ui_strings.application_layer_text_head
-						<< "node1_process2 is sending message: <" << payload.m_message
-						<< "> to destination #" << payload.m_destination_port_num
-						<< '\n'
-						<< ui_strings.application_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node1_process2 is sending message: <{1}> to destination #{2}\n\n{3}",
+					ui_strings::application_layer_text_head,
+					payload.m_message.to_string( ),
+					payload.m_destination_port_num,
+					ui_strings::application_layer_text_tail );
 	}
 
 	return payload;
@@ -241,8 +225,7 @@ node1_process2( const uint32_t process_num,
 
 [[ nodiscard ]] payload_t
 node2_process1( const uint32_t process_num,
-				const std::pair<payload_t, bool>& incoming_payload,
-				std::osyncstream& out_sync_stream )
+				const std::pair<payload_t, bool>& incoming_payload )
 {
 	payload_t payload;
 	payload.m_source_port_num = process_num;
@@ -251,13 +234,11 @@ node2_process1( const uint32_t process_num,
 
 	if ( isIntact )
 	{
-		out_sync_stream << ui_strings.application_layer_text_head
-						<< "node2_process1 received message: <" << received_payload.m_message
-						<< "> from source #" << received_payload.m_source_port_num
-						<< '\n'
-						<< ui_strings.application_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node2_process1 received message: <{1}> from source #{2}\n\n{3}",
+					ui_strings::application_layer_text_head,
+					received_payload.m_message.to_string( ),
+					received_payload.m_source_port_num,
+					ui_strings::application_layer_text_tail );
 
 		payload.m_destination_port_num = 5002;
 
@@ -281,35 +262,28 @@ node2_process1( const uint32_t process_num,
 
 		std::this_thread::sleep_for( node2_process1_application_layer_delay );
 
-		out_sync_stream << ui_strings.application_layer_text_head
-						<< "node2_process1 is sending message: <" << payload.m_message
-						<< "> to destination #" << payload.m_destination_port_num
-						<< '\n'
-						<< ui_strings.application_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node2_process1 is sending message: <{1}> to destination #{2}\n\n{3}",
+					ui_strings::application_layer_text_head,
+					payload.m_message.to_string( ),
+					payload.m_destination_port_num,
+					ui_strings::application_layer_text_tail );
 	}
 	else
 	{
-		out_sync_stream << ui_strings.application_layer_text_head
-						<< "node2_process1 received corrupt message: <" << received_payload.m_message
-						<< ">"
-						<< '\n'
-						<< ui_strings.application_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node2_process1 received corrupt message: <{1}>\n\n{2}",
+					ui_strings::application_layer_text_head,
+					received_payload.m_message.to_string( ),
+					ui_strings::application_layer_text_tail );
 
 		payload.m_destination_port_num = 0;
 
 		std::this_thread::sleep_for( node2_process1_application_layer_delay );
 
-		out_sync_stream << ui_strings.application_layer_text_head
-						<< "node2_process1 is sending message: <" << payload.m_message
-						<< "> to destination #" << payload.m_destination_port_num
-						<< '\n'
-						<< ui_strings.application_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node2_process1 is sending message: <{1}> to destination #{2}\n\n{3}",
+					ui_strings::application_layer_text_head,
+					payload.m_message.to_string( ),
+					payload.m_destination_port_num,
+					ui_strings::application_layer_text_tail );
 	}
 
 	return payload;
@@ -317,8 +291,7 @@ node2_process1( const uint32_t process_num,
 
 [[ nodiscard ]] payload_t
 node2_process2( const uint32_t process_num,
-				const std::pair<payload_t, bool>& incoming_payload,
-				std::osyncstream& out_sync_stream )
+				const std::pair<payload_t, bool>& incoming_payload )
 {
 	payload_t payload;
 	payload.m_source_port_num = process_num;
@@ -327,13 +300,11 @@ node2_process2( const uint32_t process_num,
 
 	if ( isIntact )
 	{
-		out_sync_stream << ui_strings.application_layer_text_head
-						<< "node2_process2 received message: <" << received_payload.m_message
-						<< "> from source #" << received_payload.m_source_port_num
-						<< '\n'
-						<< ui_strings.application_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node2_process2 received message: <{1}> from source #{2}\n\n{3}",
+					ui_strings::application_layer_text_head,
+					received_payload.m_message.to_string( ),
+					received_payload.m_source_port_num,
+					ui_strings::application_layer_text_tail );
 
 		payload.m_destination_port_num = 5001;
 
@@ -357,51 +328,40 @@ node2_process2( const uint32_t process_num,
 
 		std::this_thread::sleep_for( node2_process2_application_layer_delay );
 
-		out_sync_stream << ui_strings.application_layer_text_head
-						<< "node2_process2 is sending message: <" << payload.m_message
-						<< "> to destination #" << payload.m_destination_port_num
-						<< '\n'
-						<< ui_strings.application_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node2_process2 is sending message: <{1}> to destination #{2}\n\n{3}",
+					ui_strings::application_layer_text_head,
+					payload.m_message.to_string( ),
+					payload.m_destination_port_num,
+					ui_strings::application_layer_text_tail );
 	}
 	else
 	{
-		out_sync_stream << ui_strings.application_layer_text_head
-						<< "node2_process2 received corrupt message: <" << received_payload.m_message
-						<< ">"
-						<< '\n'
-						<< ui_strings.application_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node2_process2 received corrupt message: <{1}>\n\n{2}",
+					ui_strings::application_layer_text_head,
+					received_payload.m_message.to_string( ),
+					ui_strings::application_layer_text_tail );
 
 		payload.m_destination_port_num = 0;
 
 		std::this_thread::sleep_for( node2_process2_application_layer_delay );
 
-		out_sync_stream << ui_strings.application_layer_text_head
-						<< "node2_process2 is sending message: <" << payload.m_message
-						<< "> to destination #" << payload.m_destination_port_num
-						<< '\n'
-						<< ui_strings.application_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node2_process2 is sending message: <{1}> to destination #{2}\n\n{3}",
+					ui_strings::application_layer_text_head,
+					payload.m_message.to_string( ),
+					payload.m_destination_port_num,
+					ui_strings::application_layer_text_tail );
 	}
 
 	return payload;
 }
 
 [[ nodiscard ]] segment_t
-channel( segment_t segment,
-		 std::osyncstream& out_sync_stream )
+channel( segment_t segment )
 {
-	out_sync_stream << ui_strings.channel_text_head
-					<< "channel received: <" << segment
-					<< ">"
-					<< '\n'
-					<< ui_strings.channel_text_tail;
-
-	out_sync_stream.emit( );
+	fmt::print( "{0}channel received: <{1}>\n\n{2}",
+				ui_strings::channel_text_head,
+				segment.to_string( ),
+				ui_strings::channel_text_tail );
 
 	static std::mt19937 mtgen { rand_dev( ) };
 	static std::uniform_int_distribution uniform_50_50_dist { 1, 2 };
@@ -415,28 +375,22 @@ channel( segment_t segment,
 
 	std::this_thread::sleep_for( channel_delay );
 
-	out_sync_stream << ui_strings.channel_text_head
-					<< "channel is sending: <" << segment
-					<< ">"
-					<< '\n'
-					<< ui_strings.channel_text_tail;
-
-	out_sync_stream.emit( );
+	fmt::print( "{0}channel is sending: <{1}>\n\n{2}",
+				ui_strings::channel_text_head,
+				segment.to_string( ),
+				ui_strings::channel_text_tail );
 
 	return segment;
 }
 
 [[ nodiscard ]] segment_t
-node1_transport_to_channel( const payload_t payload,
-							std::osyncstream& out_sync_stream )
+node1_transport_to_channel( const payload_t payload )
 {
-	out_sync_stream << ui_strings.transport_layer_text_head
-					<< "node1_transport received message: <" << payload.m_message
-					<< "> from source #" << payload.m_source_port_num
-					<< '\n'
-					<< ui_strings.transport_layer_text_tail;
-
-	out_sync_stream.emit( );
+	fmt::print( "{0}node1_transport received message: <{1}> from source #{2}\n\n{3}",
+				ui_strings::transport_layer_text_head,
+				payload.m_message.to_string( ),
+				payload.m_source_port_num,
+				ui_strings::transport_layer_text_tail );
 
 	segment_t segment { };
 	segment |= segment_t { payload.m_message.to_ullong( ) };
@@ -476,20 +430,17 @@ node1_transport_to_channel( const payload_t payload,
 
 	std::this_thread::sleep_for( node1_transport_to_layer_delay );
 
-	out_sync_stream << ui_strings.transport_layer_text_head
-					<< "node1_transport is sending segment: <" << segment
-					<< "> to destination #" << payload.m_destination_port_num
-					<< '\n'
-					<< ui_strings.transport_layer_text_tail;
-
-	out_sync_stream.emit( );
+	fmt::print( "{0}node1_transport is sending segment: <{1}> to destination #{2}\n\n{3}",
+				ui_strings::transport_layer_text_head,
+				segment.to_string( ),
+				payload.m_destination_port_num,
+				ui_strings::transport_layer_text_tail );
 
 	return segment;
 }
 
 [[ nodiscard ]] std::pair<payload_t, bool>
-node1_transport_from_channel( const segment_t segment,
-							  std::osyncstream& out_sync_stream )
+node1_transport_from_channel( const segment_t segment )
 {
 	std::pair<payload_t, bool> result { };
 	auto& [ payload, isIntact ] { result };
@@ -516,63 +467,50 @@ node1_transport_from_channel( const segment_t segment,
 
 	if ( segment.count( ) % 2 == 0 )
 	{
-		out_sync_stream << ui_strings.transport_layer_text_head
-						<< "node1_transport received segment: <" << segment
-						<< "> from source #" << payload.m_source_port_num
-						<< '\n'
-						<< ui_strings.transport_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node1_transport received segment: <{1}> from source #{2}\n\n{3}",
+					ui_strings::transport_layer_text_head,
+					segment.to_string( ),
+					payload.m_source_port_num,
+					ui_strings::transport_layer_text_tail );
 
 		isIntact = true;
 
 		std::this_thread::sleep_for( node1_transport_from_layer_delay );
 
-		out_sync_stream << ui_strings.transport_layer_text_head
-						<< "node1_transport is sending message: <" << payload.m_message
-						<< "> to destination #" << payload.m_destination_port_num
-						<< '\n'
-						<< ui_strings.transport_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node1_transport is sending message: <{1}> to destination #{2}\n\n{3}",
+					ui_strings::transport_layer_text_head,
+					payload.m_message.to_string( ),
+					payload.m_destination_port_num,
+					ui_strings::transport_layer_text_tail );
 	}
 	else
 	{
-		out_sync_stream << ui_strings.transport_layer_text_head
-						<< "node1_transport received corrupt segment: <" << segment
-						<< ">"
-						<< '\n'
-						<< ui_strings.transport_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node1_transport received corrupt segment: <{1}>\n\n{2}",
+					ui_strings::transport_layer_text_head,
+					segment.to_string( ),
+					ui_strings::transport_layer_text_tail );
 
 		isIntact = false;
 
 		std::this_thread::sleep_for( node1_transport_from_layer_delay );
 
-		out_sync_stream << ui_strings.transport_layer_text_head
-						<< "node1_transport is sending corrupt message: <" << payload.m_message
-						<< ">"
-						<< '\n'
-						<< ui_strings.transport_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node1_transport is sending corrupt message: <{1}>\n\n{2}",
+					ui_strings::transport_layer_text_head,
+					payload.m_message.to_string( ),
+					ui_strings::transport_layer_text_tail );
 	}
 
 	return result;
 }
 
 [[ nodiscard ]] segment_t
-node2_transport_to_channel( const payload_t payload,
-							std::osyncstream& out_sync_stream )
+node2_transport_to_channel( const payload_t payload )
 {
-	out_sync_stream << ui_strings.transport_layer_text_head
-					<< "node2_transport received message: <" << payload.m_message
-					<< "> from source #" << payload.m_source_port_num
-					<< '\n'
-					<< ui_strings.transport_layer_text_tail;
-
-	out_sync_stream.emit( );
+	fmt::print( "{0}node2_transport received message: <{1}> from source #{2}\n\n{3}",
+				ui_strings::transport_layer_text_head,
+				payload.m_message.to_string( ),
+				payload.m_source_port_num,
+				ui_strings::transport_layer_text_tail );
 
 	segment_t segment { };
 	segment |= segment_t { payload.m_message.to_ullong( ) };
@@ -612,20 +550,17 @@ node2_transport_to_channel( const payload_t payload,
 
 	std::this_thread::sleep_for( node2_transport_to_layer_delay );
 
-	out_sync_stream << ui_strings.transport_layer_text_head
-					<< "node2_transport is sending segment: <" << segment
-					<< "> to destination #" << payload.m_destination_port_num
-					<< '\n'
-					<< ui_strings.transport_layer_text_tail;
-
-	out_sync_stream.emit( );
+	fmt::print( "{0}node2_transport is sending segment: <{1}> to destination #{2}\n\n{3}",
+				ui_strings::transport_layer_text_head,
+				segment.to_string( ),
+				payload.m_destination_port_num,
+				ui_strings::transport_layer_text_tail );
 
 	return segment;
 }
 
 [[ nodiscard ]] std::pair<payload_t, bool>
-node2_transport_from_channel( const segment_t segment,
-							  std::osyncstream& out_sync_stream )
+node2_transport_from_channel( const segment_t segment )
 {
 	std::pair<payload_t, bool> result { };
 	auto& [ payload, isIntact ] { result };
@@ -652,47 +587,37 @@ node2_transport_from_channel( const segment_t segment,
 
 	if ( segment.count( ) % 2 == 0 )
 	{
-		out_sync_stream << ui_strings.transport_layer_text_head
-						<< "node2_transport received segment: <" << segment
-						<< "> from source #" << payload.m_source_port_num
-						<< '\n'
-						<< ui_strings.transport_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node2_transport received segment: <{1}> from source #{2}\n\n{3}",
+					ui_strings::transport_layer_text_head,
+					segment.to_string( ),
+					payload.m_source_port_num,
+					ui_strings::transport_layer_text_tail );
 
 		isIntact = true;
 
 		std::this_thread::sleep_for( node2_transport_from_layer_delay );
 
-		out_sync_stream << ui_strings.transport_layer_text_head
-						<< "node2_transport is sending message: <" << payload.m_message
-						<< "> to destination #" << payload.m_destination_port_num
-						<< '\n'
-						<< ui_strings.transport_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node2_transport is sending message: <{1}> to destination #{2}\n\n{3}",
+					ui_strings::transport_layer_text_head,
+					payload.m_message.to_string( ),
+					payload.m_destination_port_num,
+					ui_strings::transport_layer_text_tail );
 	}
 	else
 	{
-		out_sync_stream << ui_strings.transport_layer_text_head
-						<< "node2_transport received corrupt segment: <" << segment
-						<< ">"
-						<< '\n'
-						<< ui_strings.transport_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node2_transport received corrupt segment: <{1}>\n\n{2}",
+					ui_strings::transport_layer_text_head,
+					segment.to_string( ),
+					ui_strings::transport_layer_text_tail );
 
 		isIntact = false;
 
 		std::this_thread::sleep_for( node2_transport_from_layer_delay );
 
-		out_sync_stream << ui_strings.transport_layer_text_head
-						<< "node2_transport is sending corrupt message: <" << payload.m_message
-						<< ">"
-						<< '\n'
-						<< ui_strings.transport_layer_text_tail;
-
-		out_sync_stream.emit( );
+		fmt::print( "{0}node2_transport is sending corrupt message: <{1}>\n\n{2}",
+					ui_strings::transport_layer_text_head,
+					payload.m_message.to_string( ),
+					ui_strings::transport_layer_text_tail );
 	}
 
 	return result;
@@ -700,8 +625,7 @@ node2_transport_from_channel( const segment_t segment,
 
 void
 execute_connection1( const uint32_t node1_process1_num,
-					 const uint32_t node2_process2_num,
-					 std::osyncstream& out_sync_stream )
+					 const uint32_t node2_process2_num )
 {
 	std::pair<payload_t, bool> node1_process1_payload_from_transport { payload_t { }, true };
 	std::pair<payload_t, bool> node2_process2_payload_from_transport { payload_t { }, true };
@@ -709,53 +633,42 @@ execute_connection1( const uint32_t node1_process1_num,
 	while ( true )
 	{
 		payload_t node1_process1_payload { node1_process1( node1_process1_num,
-														   node1_process1_payload_from_transport,
-														   out_sync_stream ) };
+														   node1_process1_payload_from_transport ) };
 
 		if ( node1_process1_payload.m_destination_port_num == 0 )
 		{
-			out_sync_stream << R"(    /|\/|\/|\    closing connection1 by node1_process1...    /|\/|\/|\     )""\n\n";
-			out_sync_stream.emit( );
+			fmt::print( R"(    /|\/|\/|\    closing connection1 by node1_process1...    /|\/|\/|\     )""\n\n" );
 
 			break;
 		}
 
-		segment_t node1_process1_segment { node1_transport_to_channel( node1_process1_payload,
-																	   out_sync_stream ) };
+		segment_t node1_process1_segment { node1_transport_to_channel( node1_process1_payload ) };
 
-		segment_t nodes_1_to_2_channel_output { channel( node1_process1_segment,
-														 out_sync_stream ) };
+		segment_t nodes_1_to_2_channel_output { channel( node1_process1_segment ) };
 
-		node2_process2_payload_from_transport = node2_transport_from_channel( nodes_1_to_2_channel_output,
-																			  out_sync_stream );
+		node2_process2_payload_from_transport = node2_transport_from_channel( nodes_1_to_2_channel_output );
 
 		payload_t node2_process2_payload { node2_process2( node2_process2_num,
-														   node2_process2_payload_from_transport,
-														   out_sync_stream ) };
+														   node2_process2_payload_from_transport ) };
 
 		if ( node2_process2_payload.m_destination_port_num == 0 )
 		{
-			out_sync_stream << R"(    /|\/|\/|\    closing connection1 by node2_process2...    /|\/|\/|\     )""\n\n";
-			out_sync_stream.emit( );
+			fmt::print( R"(    /|\/|\/|\    closing connection1 by node2_process2...    /|\/|\/|\     )""\n\n" );
 
 			break;
 		}
 
-		segment_t node2_process2_segment { node2_transport_to_channel( node2_process2_payload,
-																	   out_sync_stream ) };
+		segment_t node2_process2_segment { node2_transport_to_channel( node2_process2_payload ) };
 
-		segment_t nodes_2_to_1_channel_output { channel( node2_process2_segment,
-														 out_sync_stream ) };
+		segment_t nodes_2_to_1_channel_output { channel( node2_process2_segment ) };
 
-		node1_process1_payload_from_transport = node1_transport_from_channel( nodes_2_to_1_channel_output,
-																			  out_sync_stream );
+		node1_process1_payload_from_transport = node1_transport_from_channel( nodes_2_to_1_channel_output );
 	}
 }
 
 void
 execute_connection2( const uint32_t node1_process2_num,
-					 const uint32_t node2_process1_num,
-					 std::osyncstream& out_sync_stream )
+					 const uint32_t node2_process1_num )
 {
 	std::pair<payload_t, bool> node1_process2_payload_from_transport { payload_t { }, true };
 	std::pair<payload_t, bool> node2_process1_payload_from_transport { payload_t { }, true };
@@ -763,46 +676,36 @@ execute_connection2( const uint32_t node1_process2_num,
 	while ( true )
 	{
 		payload_t node1_process2_payload { node1_process2( node1_process2_num,
-														   node1_process2_payload_from_transport,
-														   out_sync_stream ) };
+														   node1_process2_payload_from_transport ) };
 
 		if ( node1_process2_payload.m_destination_port_num == 0 )
 		{
-			out_sync_stream << R"(    /|\/|\/|\    closing connection2 by node1_process2...    /|\/|\/|\     )""\n\n";
-			out_sync_stream.emit( );
+			fmt::print( R"(    /|\/|\/|\    closing connection2 by node1_process2...    /|\/|\/|\     )""\n\n" );
 
 			break;
 		}
 
-		segment_t node1_process2_segment { node1_transport_to_channel( node1_process2_payload,
-																	   out_sync_stream ) };
+		segment_t node1_process2_segment { node1_transport_to_channel( node1_process2_payload ) };
 
-		segment_t nodes_1_to_2_channel_output { channel( node1_process2_segment,
-														 out_sync_stream ) };
+		segment_t nodes_1_to_2_channel_output { channel( node1_process2_segment ) };
 
-		node2_process1_payload_from_transport = node2_transport_from_channel( nodes_1_to_2_channel_output,
-																			  out_sync_stream );
+		node2_process1_payload_from_transport = node2_transport_from_channel( nodes_1_to_2_channel_output );
 
 		payload_t node2_process1_payload { node2_process1( node2_process1_num,
-														   node2_process1_payload_from_transport,
-														   out_sync_stream ) };
+														   node2_process1_payload_from_transport ) };
 
 		if ( node2_process1_payload.m_destination_port_num == 0 )
 		{
-			out_sync_stream << R"(    /|\/|\/|\    closing connection2 by node2_process1...    /|\/|\/|\     )""\n\n";
-			out_sync_stream.emit( );
+			fmt::print( R"(    /|\/|\/|\    closing connection2 by node2_process1...    /|\/|\/|\     )""\n\n" );
 
 			break;
 		}
 
-		segment_t node2_process1_segment { node2_transport_to_channel( node2_process1_payload,
-																	   out_sync_stream ) };
+		segment_t node2_process1_segment { node2_transport_to_channel( node2_process1_payload ) };
 
-		segment_t nodes_2_to_1_channel_output { channel( node2_process1_segment,
-														 out_sync_stream ) };
+		segment_t nodes_2_to_1_channel_output { channel( node2_process1_segment ) };
 
-		node1_process2_payload_from_transport = node1_transport_from_channel( nodes_2_to_1_channel_output,
-																			  out_sync_stream );
+		node1_process2_payload_from_transport = node1_transport_from_channel( nodes_2_to_1_channel_output );
 	}
 }
 

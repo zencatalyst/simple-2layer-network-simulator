@@ -3,7 +3,6 @@
 
 #include <bitset>
 #include <utility>
-#include <syncstream>
 #include <cstddef>
 #include <cstdint>
 
@@ -31,52 +30,41 @@ struct payload_t
 
 [[ nodiscard ]] payload_t
 node1_process1( const std::uint32_t process_num,
-				const std::pair<payload_t, bool>& incoming_payload,
-				std::osyncstream& out_sync_stream );
+				const std::pair<payload_t, bool>& incoming_payload );
 
 [[ nodiscard ]] payload_t
 node1_process2( const std::uint32_t process_num,
-				const std::pair<payload_t, bool>& incoming_payload,
-				std::osyncstream& out_sync_stream );
+				const std::pair<payload_t, bool>& incoming_payload );
 
 [[ nodiscard ]] payload_t
 node2_process1( const std::uint32_t process_num,
-				const std::pair<payload_t, bool>& incoming_payload,
-				std::osyncstream& out_sync_stream );
+				const std::pair<payload_t, bool>& incoming_payload );
 
 [[ nodiscard ]] payload_t
 node2_process2( const std::uint32_t process_num,
-				const std::pair<payload_t, bool>& incoming_payload,
-				std::osyncstream& out_sync_stream );
+				const std::pair<payload_t, bool>& incoming_payload );
 
 [[ nodiscard ]] segment_t
-channel( segment_t segment,
-		 std::osyncstream& out_sync_stream );
+channel( segment_t segment );
 
 [[ nodiscard ]] segment_t
-node1_transport_to_channel( const payload_t payload,
-							std::osyncstream& out_sync_stream );
+node1_transport_to_channel( const payload_t payload );
 
 [[ nodiscard ]] std::pair<payload_t, bool>
-node1_transport_from_channel( const segment_t segment,
-							  std::osyncstream& out_sync_stream );
+node1_transport_from_channel( const segment_t segment );
 
 [[ nodiscard ]] segment_t
-node2_transport_to_channel( const payload_t payload,
-							std::osyncstream& out_sync_stream );
+node2_transport_to_channel( const payload_t payload );
 
 [[ nodiscard ]] std::pair<payload_t, bool>
-node2_transport_from_channel( const segment_t segment,
-							  std::osyncstream& out_sync_stream );
+node2_transport_from_channel( const segment_t segment );
 
 void
 execute_connection1( const std::uint32_t node1_process1_num,
-					 const std::uint32_t node2_process2_num,
-					 std::osyncstream& out_sync_stream );
+					 const std::uint32_t node2_process2_num );
 
 void
 execute_connection2( const std::uint32_t node1_process2_num,
-					 const std::uint32_t node2_process1_num,
-					 std::osyncstream& out_sync_stream );
+					 const std::uint32_t node2_process1_num );
 
 }

@@ -1,8 +1,7 @@
 
-#include <iostream>
 #include <system_error>
 #include <span>
-#include <syncstream>
+#include <string_view>
 #include <thread>
 #include <functional>
 #include <cstddef>
@@ -28,6 +27,7 @@ void inline static launch( const int argc, const char* const* const argv, int& e
 {
 	using std::size_t;
 	using std::uint32_t;
+	using std::string_view_literals::operator""sv;
 
 	const std::span<const char* const> command_line_arguments { argv, static_cast<size_t>( argc ) };
 
@@ -35,7 +35,17 @@ void inline static launch( const int argc, const char* const* const argv, int& e
 	if ( err_cond )
 	{
 		exit_code_OUT = EXIT_FAILURE;
-		fmt::print( stderr, "\n{}\n\nexiting program...\n\n", err_cond.message( ) );
+
+		if ( err_cond.value( ) == static_cast<int>( std::errc::invalid_argument ) ) [[ likely ]]
+		{
+			constexpr auto custom_error_message { "Invalid command-line argument"sv };
+			fmt::print( stderr, "\n{}\n\nexiting program...\n\n", custom_error_message );
+		}
+		else
+		{
+			fmt::print( stderr, "\n{}\n\nexiting program...\n\n", err_cond.message( ) );
+		}
+
 		return;
 	}
 
@@ -47,17 +57,11 @@ void inline static launch( const int argc, const char* const* const argv, int& e
 		const uint32_t node1_process2_num { 5002 };
 		const uint32_t node2_process1_num { 7001 };
 		const uint32_t node2_process2_num { 7002 };
-		std::osyncstream connection1_thread_out_sync_stream { std::cout };
-		std::osyncstream connection2_thread_out_sync_stream { std::cout };
 
-		std::jthread connection1_thread { sns::execute_connection1, node1_process1_num, node2_process2_num,
-										  std::ref( connection1_thread_out_sync_stream ) };
+		std::jthread connection1_thread { sns::execute_connection1, node1_process1_num, node2_process2_num };
 
-		std::jthread connection2_thread { sns::execute_connection2, node1_process2_num, node2_process1_num,
-										  std::ref( connection2_thread_out_sync_stream ) };
+		std::jthread connection2_thread { sns::execute_connection2, node1_process2_num, node2_process1_num };
 	}
-
-	std::flush( std::cout );
 
 	fmt::print( "\nConnection simulation finished...\n\n\n" );
 	std::fflush( stdout );
