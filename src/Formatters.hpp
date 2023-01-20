@@ -14,7 +14,7 @@ struct fmt::formatter< std::bitset<N> >
 		return ctx.begin( );
 	}
 
-	auto format( const std::bitset<N>& value, format_context& ctx )
+	auto format( const std::bitset<N>& value, format_context& ctx ) const
 	{
 		return fmt::format_to( ctx.out( ), "{}", value.to_string( ) );
 	}

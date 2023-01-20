@@ -13,7 +13,7 @@ LDFLAGS = -pie
 #
 # Project files
 #
-DEPS = BidirectionalMultimessageSimulation.hpp Util.hpp Formatter.hpp
+DEPS = BidirectionalMultimessageSimulation.hpp Util.hpp Formatters.hpp
 SRCS = Launch.cpp BidirectionalMultimessageSimulation.cpp
 OBJS = $(SRCS:.cpp=.o)
 TARGET = Simple-2Layer-Network-Simulator
@@ -51,7 +51,7 @@ $(RELDIR)/Launch.o: Launch.cpp BidirectionalMultimessageSimulation.hpp Util.hpp
 
 $(RELDIR)/BidirectionalMultimessageSimulation.o: BidirectionalMultimessageSimulation.cpp \
 												 BidirectionalMultimessageSimulation.hpp \
-												 Formatter.hpp
+												 Formatters.hpp
 	$(CXX) $(CXXFLAGS) $(RELCXXFLAGS) $< -o $@
 
 #
