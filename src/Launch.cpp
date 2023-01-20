@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <fmt/core.h>
 #include "BidirectionalMultimessageSimulation.hpp"
+#include "Util.hpp"
 
 
 namespace sns = simple_network_simulation;

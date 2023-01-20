@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <fmt/core.h>
+#include "Formatter.hpp"
 
 
 using std::size_t;
@@ -82,7 +83,7 @@ node1_process1( const uint32_t process_num,
 	{
 		fmt::print( "{0}node1_process1 received message: <{1}> from source #{2}\n\n{3}",
 					ui_strings::application_layer_text_head,
-					received_payload.m_message.to_string( ),
+					received_payload.m_message,
 					received_payload.m_source_port_num,
 					ui_strings::application_layer_text_tail );
 
@@ -121,7 +122,7 @@ node1_process1( const uint32_t process_num,
 
 		fmt::print( "{0}node1_process1 is sending message: <{1}> to destination #{2}\n\n{3}",
 					ui_strings::application_layer_text_head,
-					payload.m_message.to_string( ),
+					payload.m_message,
 					payload.m_destination_port_num,
 					ui_strings::application_layer_text_tail );
 	}
@@ -129,7 +130,7 @@ node1_process1( const uint32_t process_num,
 	{
 		fmt::print( "{0}node1_process1 received corrupt message: <{1}>\n\n{2}",
 					ui_strings::application_layer_text_head,
-					received_payload.m_message.to_string( ),
+					received_payload.m_message,
 					ui_strings::application_layer_text_tail );
 
 		payload.m_destination_port_num = 0;
@@ -138,7 +139,7 @@ node1_process1( const uint32_t process_num,
 
 		fmt::print( "{0}node1_process1 is sending message: <{1}> to destination #{2}\n\n{3}",
 					ui_strings::application_layer_text_head,
-					payload.m_message.to_string( ),
+					payload.m_message,
 					payload.m_destination_port_num,
 					ui_strings::application_layer_text_tail );
 	}
@@ -159,7 +160,7 @@ node1_process2( const uint32_t process_num,
 	{
 		fmt::print( "{0}node1_process2 received message: <{1}> from source #{2}\n\n{3}",
 					ui_strings::application_layer_text_head,
-					received_payload.m_message.to_string( ),
+					received_payload.m_message,
 					received_payload.m_source_port_num,
 					ui_strings::application_layer_text_tail );
 
@@ -198,7 +199,7 @@ node1_process2( const uint32_t process_num,
 
 		fmt::print( "{0}node1_process2 is sending message: <{1}> to destination #{2}\n\n{3}",
 					ui_strings::application_layer_text_head,
-					payload.m_message.to_string( ),
+					payload.m_message,
 					payload.m_destination_port_num,
 					ui_strings::application_layer_text_tail );
 	}
@@ -206,7 +207,7 @@ node1_process2( const uint32_t process_num,
 	{
 		fmt::print( "{0}node1_process2 received corrupt message: <{1}>\n\n{2}",
 					ui_strings::application_layer_text_head,
-					received_payload.m_message.to_string( ),
+					received_payload.m_message,
 					ui_strings::application_layer_text_tail );
 
 		payload.m_destination_port_num = 0;
@@ -215,7 +216,7 @@ node1_process2( const uint32_t process_num,
 
 		fmt::print( "{0}node1_process2 is sending message: <{1}> to destination #{2}\n\n{3}",
 					ui_strings::application_layer_text_head,
-					payload.m_message.to_string( ),
+					payload.m_message,
 					payload.m_destination_port_num,
 					ui_strings::application_layer_text_tail );
 	}
@@ -236,7 +237,7 @@ node2_process1( const uint32_t process_num,
 	{
 		fmt::print( "{0}node2_process1 received message: <{1}> from source #{2}\n\n{3}",
 					ui_strings::application_layer_text_head,
-					received_payload.m_message.to_string( ),
+					received_payload.m_message,
 					received_payload.m_source_port_num,
 					ui_strings::application_layer_text_tail );
 
@@ -264,7 +265,7 @@ node2_process1( const uint32_t process_num,
 
 		fmt::print( "{0}node2_process1 is sending message: <{1}> to destination #{2}\n\n{3}",
 					ui_strings::application_layer_text_head,
-					payload.m_message.to_string( ),
+					payload.m_message,
 					payload.m_destination_port_num,
 					ui_strings::application_layer_text_tail );
 	}
@@ -272,7 +273,7 @@ node2_process1( const uint32_t process_num,
 	{
 		fmt::print( "{0}node2_process1 received corrupt message: <{1}>\n\n{2}",
 					ui_strings::application_layer_text_head,
-					received_payload.m_message.to_string( ),
+					received_payload.m_message,
 					ui_strings::application_layer_text_tail );
 
 		payload.m_destination_port_num = 0;
@@ -281,7 +282,7 @@ node2_process1( const uint32_t process_num,
 
 		fmt::print( "{0}node2_process1 is sending message: <{1}> to destination #{2}\n\n{3}",
 					ui_strings::application_layer_text_head,
-					payload.m_message.to_string( ),
+					payload.m_message,
 					payload.m_destination_port_num,
 					ui_strings::application_layer_text_tail );
 	}
@@ -302,7 +303,7 @@ node2_process2( const uint32_t process_num,
 	{
 		fmt::print( "{0}node2_process2 received message: <{1}> from source #{2}\n\n{3}",
 					ui_strings::application_layer_text_head,
-					received_payload.m_message.to_string( ),
+					received_payload.m_message,
 					received_payload.m_source_port_num,
 					ui_strings::application_layer_text_tail );
 
@@ -330,7 +331,7 @@ node2_process2( const uint32_t process_num,
 
 		fmt::print( "{0}node2_process2 is sending message: <{1}> to destination #{2}\n\n{3}",
 					ui_strings::application_layer_text_head,
-					payload.m_message.to_string( ),
+					payload.m_message,
 					payload.m_destination_port_num,
 					ui_strings::application_layer_text_tail );
 	}
@@ -338,7 +339,7 @@ node2_process2( const uint32_t process_num,
 	{
 		fmt::print( "{0}node2_process2 received corrupt message: <{1}>\n\n{2}",
 					ui_strings::application_layer_text_head,
-					received_payload.m_message.to_string( ),
+					received_payload.m_message,
 					ui_strings::application_layer_text_tail );
 
 		payload.m_destination_port_num = 0;
@@ -347,7 +348,7 @@ node2_process2( const uint32_t process_num,
 
 		fmt::print( "{0}node2_process2 is sending message: <{1}> to destination #{2}\n\n{3}",
 					ui_strings::application_layer_text_head,
-					payload.m_message.to_string( ),
+					payload.m_message,
 					payload.m_destination_port_num,
 					ui_strings::application_layer_text_tail );
 	}
@@ -360,7 +361,7 @@ channel( segment_t segment )
 {
 	fmt::print( "{0}channel received: <{1}>\n\n{2}",
 				ui_strings::channel_text_head,
-				segment.to_string( ),
+				segment,
 				ui_strings::channel_text_tail );
 
 	static std::mt19937 mtgen { rand_dev( ) };
@@ -377,7 +378,7 @@ channel( segment_t segment )
 
 	fmt::print( "{0}channel is sending: <{1}>\n\n{2}",
 				ui_strings::channel_text_head,
-				segment.to_string( ),
+				segment,
 				ui_strings::channel_text_tail );
 
 	return segment;
@@ -388,7 +389,7 @@ node1_transport_to_channel( const payload_t payload )
 {
 	fmt::print( "{0}node1_transport received message: <{1}> from source #{2}\n\n{3}",
 				ui_strings::transport_layer_text_head,
-				payload.m_message.to_string( ),
+				payload.m_message,
 				payload.m_source_port_num,
 				ui_strings::transport_layer_text_tail );
 
@@ -432,7 +433,7 @@ node1_transport_to_channel( const payload_t payload )
 
 	fmt::print( "{0}node1_transport is sending segment: <{1}> to destination #{2}\n\n{3}",
 				ui_strings::transport_layer_text_head,
-				segment.to_string( ),
+				segment,
 				payload.m_destination_port_num,
 				ui_strings::transport_layer_text_tail );
 
@@ -469,7 +470,7 @@ node1_transport_from_channel( const segment_t segment )
 	{
 		fmt::print( "{0}node1_transport received segment: <{1}> from source #{2}\n\n{3}",
 					ui_strings::transport_layer_text_head,
-					segment.to_string( ),
+					segment,
 					payload.m_source_port_num,
 					ui_strings::transport_layer_text_tail );
 
@@ -479,7 +480,7 @@ node1_transport_from_channel( const segment_t segment )
 
 		fmt::print( "{0}node1_transport is sending message: <{1}> to destination #{2}\n\n{3}",
 					ui_strings::transport_layer_text_head,
-					payload.m_message.to_string( ),
+					payload.m_message,
 					payload.m_destination_port_num,
 					ui_strings::transport_layer_text_tail );
 	}
@@ -487,7 +488,7 @@ node1_transport_from_channel( const segment_t segment )
 	{
 		fmt::print( "{0}node1_transport received corrupt segment: <{1}>\n\n{2}",
 					ui_strings::transport_layer_text_head,
-					segment.to_string( ),
+					segment,
 					ui_strings::transport_layer_text_tail );
 
 		isIntact = false;
@@ -496,7 +497,7 @@ node1_transport_from_channel( const segment_t segment )
 
 		fmt::print( "{0}node1_transport is sending corrupt message: <{1}>\n\n{2}",
 					ui_strings::transport_layer_text_head,
-					payload.m_message.to_string( ),
+					payload.m_message,
 					ui_strings::transport_layer_text_tail );
 	}
 
@@ -508,7 +509,7 @@ node2_transport_to_channel( const payload_t payload )
 {
 	fmt::print( "{0}node2_transport received message: <{1}> from source #{2}\n\n{3}",
 				ui_strings::transport_layer_text_head,
-				payload.m_message.to_string( ),
+				payload.m_message,
 				payload.m_source_port_num,
 				ui_strings::transport_layer_text_tail );
 
@@ -552,7 +553,7 @@ node2_transport_to_channel( const payload_t payload )
 
 	fmt::print( "{0}node2_transport is sending segment: <{1}> to destination #{2}\n\n{3}",
 				ui_strings::transport_layer_text_head,
-				segment.to_string( ),
+				segment,
 				payload.m_destination_port_num,
 				ui_strings::transport_layer_text_tail );
 
@@ -589,7 +590,7 @@ node2_transport_from_channel( const segment_t segment )
 	{
 		fmt::print( "{0}node2_transport received segment: <{1}> from source #{2}\n\n{3}",
 					ui_strings::transport_layer_text_head,
-					segment.to_string( ),
+					segment,
 					payload.m_source_port_num,
 					ui_strings::transport_layer_text_tail );
 
@@ -599,7 +600,7 @@ node2_transport_from_channel( const segment_t segment )
 
 		fmt::print( "{0}node2_transport is sending message: <{1}> to destination #{2}\n\n{3}",
 					ui_strings::transport_layer_text_head,
-					payload.m_message.to_string( ),
+					payload.m_message,
 					payload.m_destination_port_num,
 					ui_strings::transport_layer_text_tail );
 	}
@@ -607,7 +608,7 @@ node2_transport_from_channel( const segment_t segment )
 	{
 		fmt::print( "{0}node2_transport received corrupt segment: <{1}>\n\n{2}",
 					ui_strings::transport_layer_text_head,
-					segment.to_string( ),
+					segment,
 					ui_strings::transport_layer_text_tail );
 
 		isIntact = false;
@@ -616,7 +617,7 @@ node2_transport_from_channel( const segment_t segment )
 
 		fmt::print( "{0}node2_transport is sending corrupt message: <{1}>\n\n{2}",
 					ui_strings::transport_layer_text_head,
-					payload.m_message.to_string( ),
+					payload.m_message,
 					ui_strings::transport_layer_text_tail );
 	}
 

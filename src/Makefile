@@ -8,15 +8,21 @@ CXXFLAGS = -c -fpie -std=c++23 -Wall -Wextra -Wpedantic -Wconversion -Wsign-conv
 #
 # Linker flags
 #
-LDFLAGS = -lfmt -pie
+LDFLAGS = -pie
 
 #
 # Project files
 #
-DEPS = BidirectionalMultimessageSimulation.hpp
+DEPS = BidirectionalMultimessageSimulation.hpp Util.hpp Formatter.hpp
 SRCS = Launch.cpp BidirectionalMultimessageSimulation.cpp
 OBJS = $(SRCS:.cpp=.o)
 TARGET = Simple-2Layer-Network-Simulator
+
+#
+# {fmt} lib specific flags
+#
+CXXFLAGS += `pkg-config --cflags fmt`
+LDFLAGS += `pkg-config --libs fmt`
 
 #
 # Release build settings
@@ -24,26 +30,28 @@ TARGET = Simple-2Layer-Network-Simulator
 RELDIR = ../build/release
 RELTARGET = $(RELDIR)/$(TARGET)
 RELOBJS = $(addprefix $(RELDIR)/, $(OBJS))
-RELCXXFLAGS = -O3 -march=native -mtune=generic -flto
-RELLDFLAGS = -O3 -march=native -mtune=generic -flto -s
+RELCXXFLAGS = -O3 -march=native -mtune=native -flto
+RELLDFLAGS = -O3 -march=native -mtune=native -flto=auto -s
 
 .PHONY: all clean prep release remake
 
-# Default build
+# Default build rules
 all: prep release
 
 #
-# Release rules
+# Release build rules
 #
 release: $(RELTARGET)
 
 $(RELTARGET): $(RELOBJS)
 	$(CXX) $(LDFLAGS) $(RELLDFLAGS) $^ -o $@
 
-$(RELDIR)/Launch.o: Launch.cpp BidirectionalMultimessageSimulation.hpp
+$(RELDIR)/Launch.o: Launch.cpp BidirectionalMultimessageSimulation.hpp Util.hpp
 	$(CXX) $(CXXFLAGS) $(RELCXXFLAGS) $< -o $@
 
-$(RELDIR)/BidirectionalMultimessageSimulation.o: BidirectionalMultimessageSimulation.cpp BidirectionalMultimessageSimulation.hpp
+$(RELDIR)/BidirectionalMultimessageSimulation.o: BidirectionalMultimessageSimulation.cpp \
+												 BidirectionalMultimessageSimulation.hpp \
+												 Formatter.hpp
 	$(CXX) $(CXXFLAGS) $(RELCXXFLAGS) $< -o $@
 
 #
