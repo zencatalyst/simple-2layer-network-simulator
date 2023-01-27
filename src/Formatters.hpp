@@ -9,12 +9,12 @@
 template <std::size_t N>
 struct fmt::formatter< std::bitset<N> >
 {
-	constexpr auto parse( format_parse_context& ctx )
+	constexpr auto parse( fmt::format_parse_context& ctx )
 	{
 		return ctx.begin( );
 	}
 
-	auto format( const std::bitset<N>& value, format_context& ctx ) const
+	auto format( const std::bitset<N>& value, fmt::format_context& ctx ) const
 	{
 		return fmt::format_to( ctx.out( ), "{}", value.to_string( ) );
 	}

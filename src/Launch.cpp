@@ -9,19 +9,15 @@
 #include <cstdlib>
 #include <cstdio>
 #include <fmt/core.h>
+#include "Application.hpp"
 #include "BidirectionalMultimessageSimulation.hpp"
 #include "Util.hpp"
 
 
 namespace sns = simple_network_simulation;
 
-namespace simple_network_simulation
-{
-
 [[ nodiscard ]] std::error_condition
 initialize_program( const std::span<const char* const> command_line_arguments ) noexcept;
-
-}
 
 
 void inline static launch( const int argc, const char* const* const argv, int& exit_code_OUT )
@@ -32,19 +28,25 @@ void inline static launch( const int argc, const char* const* const argv, int& e
 
 	const std::span<const char* const> command_line_arguments { argv, static_cast<size_t>( argc ) };
 
-	const std::error_condition err_cond { sns::initialize_program( command_line_arguments ) };
+	const std::error_condition err_cond { initialize_program( command_line_arguments ) };
 	if ( err_cond )
 	{
-		exit_code_OUT = EXIT_FAILURE;
-
-		if ( err_cond.value( ) == static_cast<int>( std::errc::invalid_argument ) ) [[ likely ]]
+		if ( err_cond.value( ) == static_cast<int>( std::errc::operation_canceled ) ) [[ likely ]]
 		{
+			exit_code_OUT = EXIT_SUCCESS;
+		}
+		else if ( err_cond.value( ) == static_cast<int>( std::errc::invalid_argument ) ) [[ likely ]]
+		{
+			exit_code_OUT = EXIT_FAILURE;
 			constexpr auto custom_error_message { "Invalid command-line argument"sv };
-			fmt::print( stderr, "\n{}\n\nexiting program...\n\n", custom_error_message );
+			fmt::print( stderr, "\n{0}: error: {1}: {2}\n\nexiting program...\n\n",
+						sns::application_name, err_cond.value( ), custom_error_message );
 		}
 		else
 		{
-			fmt::print( stderr, "\n{}\n\nexiting program...\n\n", err_cond.message( ) );
+			exit_code_OUT = EXIT_FAILURE;
+			fmt::print( stderr, "\n{0}: error: {1}: {2}\n\nexiting program...\n\n",
+						sns::application_name, err_cond.value( ), err_cond.message( ) );
 		}
 
 		return;
@@ -75,7 +77,10 @@ int main( int argc, char* argv[] )
 {
 	int exit_code { };
 
-	const auto registration_result { std::atexit( [ ]( ){ fmt::print( stderr, "Program execution ended.\n\n" ); } ) };
+	const auto registration_result { std::atexit( [ ]( )
+												  {
+													fmt::print( stderr, "Program execution ended.\n\n" );
+												  } ) };
 	if ( registration_result != 0 )
 	{
 		fmt::print( stderr, "\nRegistration failed.\n\n" );

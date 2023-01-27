@@ -1,11 +1,10 @@
 
 #include "BidirectionalMultimessageSimulation.hpp"
+#include <chrono>
 #include <string_view>
-#include <span>
-#include <utility>
 #include <random>
+#include <utility>
 #include <thread>
-#include <system_error>
 #include <cstddef>
 #include <cstdint>
 #include <fmt/core.h>
@@ -710,61 +709,48 @@ execute_connection2( const uint32_t node1_process2_num,
 	}
 }
 
-[[ nodiscard ]] std::error_condition
-initialize_program( const std::span<const char* const> command_line_arguments ) noexcept
+void
+set_layers_delays( const bool layers_delays_status ) noexcept
 {
-	constexpr std::string_view layer_delays_on_arg { "-layer-delays=on" };
-	constexpr std::string_view layer_delays_off_arg { "-layer-delays=off" };
-	constexpr std::string_view faulty_channel_yes_arg { "-faulty-channel=yes" };
-	constexpr std::string_view faulty_channel_no_arg { "-faulty-channel=no" };
-
-	const auto command_line_options { command_line_arguments.subspan( 1 ) };
-
-	for ( const auto option_ptr : command_line_options )
+	if ( layers_delays_status == true )
 	{
-		const std::string_view option { option_ptr };
-
-		if ( option == layer_delays_on_arg )
-		{
-			node1_process1_application_layer_delay = node1_process1_application_layer_default_delay;
-			node1_process2_application_layer_delay = node1_process2_application_layer_default_delay;
-			node2_process1_application_layer_delay = node2_process1_application_layer_default_delay;
-			node2_process2_application_layer_delay = node2_process2_application_layer_default_delay;
-			node1_transport_to_layer_delay = node1_transport_to_layer_default_delay;
-			node1_transport_from_layer_delay = node1_transport_from_layer_default_delay;
-			node2_transport_to_layer_delay = node2_transport_to_layer_default_delay;
-			node2_transport_from_layer_delay = node2_transport_from_layer_default_delay;
-			channel_delay = channel_default_delay;
-		}
-		else if ( option == layer_delays_off_arg )
-		{
-			using std::chrono_literals::operator""ms;
-
-			node1_process1_application_layer_delay = 0ms;
-			node1_process2_application_layer_delay = 0ms;
-			node2_process1_application_layer_delay = 0ms;
-			node2_process2_application_layer_delay = 0ms;
-			node1_transport_to_layer_delay = 0ms;
-			node1_transport_from_layer_delay = 0ms;
-			node2_transport_to_layer_delay = 0ms;
-			node2_transport_from_layer_delay = 0ms;
-			channel_delay = 0ms;
-		}
-		else if ( option == faulty_channel_yes_arg )
-		{
-			isChannelFaulty = true;
-		}
-		else if ( option == faulty_channel_no_arg )
-		{
-			isChannelFaulty = false;
-		}
-		else
-		{
-			return std::error_condition { std::errc::invalid_argument };
-		}
+		node1_process1_application_layer_delay = node1_process1_application_layer_default_delay;
+		node1_process2_application_layer_delay = node1_process2_application_layer_default_delay;
+		node2_process1_application_layer_delay = node2_process1_application_layer_default_delay;
+		node2_process2_application_layer_delay = node2_process2_application_layer_default_delay;
+		node1_transport_to_layer_delay         = node1_transport_to_layer_default_delay;
+		node1_transport_from_layer_delay       = node1_transport_from_layer_default_delay;
+		node2_transport_to_layer_delay         = node2_transport_to_layer_default_delay;
+		node2_transport_from_layer_delay       = node2_transport_from_layer_default_delay;
+		channel_delay                          = channel_default_delay;
 	}
+	else
+	{
+		using std::chrono_literals::operator""ms;
 
-	return std::error_condition { };
+		node1_process1_application_layer_delay = 0ms;
+		node1_process2_application_layer_delay = 0ms;
+		node2_process1_application_layer_delay = 0ms;
+		node2_process2_application_layer_delay = 0ms;
+		node1_transport_to_layer_delay         = 0ms;
+		node1_transport_from_layer_delay       = 0ms;
+		node2_transport_to_layer_delay         = 0ms;
+		node2_transport_from_layer_delay       = 0ms;
+		channel_delay                          = 0ms;
+	}
+}
+
+void
+set_channel_faults( const bool channel_faults_status ) noexcept
+{
+	if ( channel_faults_status == true )
+	{
+		isChannelFaulty = true;
+	}
+	else
+	{
+		isChannelFaulty = false;
+	}
 }
 
 }
