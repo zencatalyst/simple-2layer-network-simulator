@@ -11,8 +11,9 @@
 #include "Formatters.hpp"
 
 
-using std::size_t;
+using std::uint8_t;
 using std::uint32_t;
+using std::size_t;
 
 namespace simple_network_simulation
 {
@@ -66,8 +67,6 @@ constexpr std::string_view channel_text_tail { "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 }
 
-std::random_device rand_dev { };
-
 
 [[ nodiscard ]] payload_t
 node1_process1( const uint32_t process_num,
@@ -94,7 +93,7 @@ node1_process1( const uint32_t process_num,
 		{
 			payload.m_destination_port_num = 7002;
 
-			static size_t node1_process1_request_counter { };
+			thread_local size_t node1_process1_request_counter { };
 
 			switch ( node1_process1_request_counter )
 			{
@@ -171,7 +170,7 @@ node1_process2( const uint32_t process_num,
 		{
 			payload.m_destination_port_num = 7001;
 
-			static size_t node1_process2_request_counter { };
+			thread_local size_t node1_process2_request_counter { };
 
 			switch ( node1_process2_request_counter )
 			{
@@ -363,12 +362,13 @@ channel( segment_t segment )
 				segment,
 				ui_strings::channel_text_tail );
 
-	static std::mt19937 mtgen { rand_dev( ) };
-	static std::uniform_int_distribution uniform_50_50_dist { 1, 2 };
+	thread_local std::random_device rand_dev { };
+	thread_local std::mt19937 mtgen { rand_dev( ) };
+	thread_local std::uniform_int_distribution<uint8_t> uniform_50_50_dist { 1, 2 };
+	thread_local std::uniform_int_distribution<size_t> uniform_dist_for_bit_select { 0, segment.size( ) - 1 };
 
 	if ( isChannelFaulty && uniform_50_50_dist( mtgen ) == 1 )
 	{
-		static std::uniform_int_distribution<size_t> uniform_dist_for_bit_select { 0, segment.size( ) - 1 };
 		const auto random_index { uniform_dist_for_bit_select( mtgen ) };
 		segment.flip( random_index );
 	}

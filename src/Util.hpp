@@ -10,18 +10,19 @@
 namespace simple_network_simulation::util
 {
 
-template < typename Time = std::chrono::microseconds,
-           typename Clock = std::chrono::steady_clock >
+template < class Time  = std::chrono::microseconds,
+		   class Clock = std::chrono::steady_clock >
+requires ( std::chrono::is_clock_v<Clock> )
 struct ScopedTimer
 {
 	const std::chrono::time_point< Clock > m_start { Clock::now( ) };
 		  std::chrono::time_point< Clock > m_end;
-    std::FILE* m_stream;
+	std::FILE* m_stream;
 
 	ScopedTimer( std::FILE* const stream = stderr )
-    : m_stream { stream }
-    {
-    }
+	: m_stream { stream }
+	{
+	}
 	~ScopedTimer( )
 	{
 		m_end = Clock::now( );

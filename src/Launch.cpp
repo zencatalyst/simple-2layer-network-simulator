@@ -14,8 +14,6 @@
 #include "Util.hpp"
 
 
-namespace sns = simple_network_simulation;
-
 [[ nodiscard ]] std::error_condition
 initialize_program( const std::span<const char* const> command_line_arguments ) noexcept;
 
@@ -25,6 +23,7 @@ void inline static launch( const int argc, const char* const* const argv, int& e
 	using std::size_t;
 	using std::uint32_t;
 	using std::string_view_literals::operator""sv;
+	namespace sns = simple_network_simulation;
 
 	const std::span<const char* const> command_line_arguments { argv, static_cast<size_t>( argc ) };
 
