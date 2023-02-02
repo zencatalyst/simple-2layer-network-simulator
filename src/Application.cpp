@@ -11,13 +11,6 @@ namespace simple_network_simulation
 {
 
 void
-set_layers_delays( const bool layers_delays_status ) noexcept;
-
-void
-set_channel_faults( const bool channel_faults_status ) noexcept;
-
-
-void
 display_version( )
 {
 	fmt::print( stdout,
@@ -70,6 +63,13 @@ Documentation <https://github.com/zencatalyst/simple-2layer-network-simulator/bl
 )", application_name );
 }
 
+
+void
+set_layers_delays( const bool layers_delays_status ) noexcept;
+
+void
+set_channel_faults( const bool channel_faults_status ) noexcept;
+
 }
 
 [[ nodiscard ]] std::error_condition
@@ -110,12 +110,28 @@ initialize_program( const std::span<const char* const> command_line_arguments ) 
 		}
 		else if ( option == display_version_arg )
 		{
-			sns::display_version( );
+			try
+			{
+				sns::display_version( );
+			}
+			catch ( ... )
+			{
+				return std::error_condition { std::errc::io_error };
+			}
+
 			return std::error_condition { std::errc::operation_canceled };
 		}
 		else if ( option == display_help_arg )
 		{
-			sns::display_help( );
+			try
+			{
+				sns::display_help( );
+			}
+			catch ( ... )
+			{
+				return std::error_condition { std::errc::io_error };
+			}
+
 			return std::error_condition { std::errc::operation_canceled };
 		}
 		else
