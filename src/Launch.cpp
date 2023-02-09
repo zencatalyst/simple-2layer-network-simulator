@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <fmt/core.h>
+#include <fmt/chrono.h>
 #include "Application.hpp"
 #include "BidirectionalMultimessageSimulation.hpp"
 #include "Util.hpp"
