@@ -25,6 +25,12 @@ CXXFLAGS += `pkg-config --cflags fmt`
 LDFLAGS += `pkg-config --libs fmt`
 
 #
+# spdlog lib specific flags
+#
+CXXFLAGS += `pkg-config --cflags spdlog`
+LDFLAGS += `pkg-config --libs spdlog`
+
+#
 # Debug build settings
 #
 DBGDIR = ../build/debug

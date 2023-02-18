@@ -3,8 +3,10 @@
 #include <system_error>
 #include <span>
 #include <string_view>
+#include <exception>
 #include <cstdio>
 #include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 
 namespace simple_network_simulation
@@ -114,8 +116,9 @@ initialize_program( const std::span<const char* const> command_line_arguments ) 
 			{
 				sns::display_version( );
 			}
-			catch ( ... )
+			catch ( const std::exception& ex )
 			{
+				spdlog::get( "basic_logger" )->critical( "{}", ex.what( ) );
 				return std::error_condition { std::errc::io_error };
 			}
 
@@ -127,8 +130,9 @@ initialize_program( const std::span<const char* const> command_line_arguments ) 
 			{
 				sns::display_help( );
 			}
-			catch ( ... )
+			catch ( const std::exception& ex )
 			{
+				spdlog::get( "basic_logger" )->critical( "{}", ex.what( ) );
 				return std::error_condition { std::errc::io_error };
 			}
 

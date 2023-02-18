@@ -9,7 +9,7 @@
 template <std::size_t N>
 struct fmt::formatter< std::bitset<N> >
 {
-	constexpr auto parse( fmt::format_parse_context& ctx )
+	constexpr auto parse( const fmt::format_parse_context& ctx )
 	{
 		return ctx.begin( );
 	}
