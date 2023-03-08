@@ -21,14 +21,14 @@ TARGET = Simple-2Layer-Network-Simulator
 #
 # {fmt} lib specific flags
 #
-CXXFLAGS += `pkg-config --cflags fmt`
-LDFLAGS += `pkg-config --libs fmt`
+CXXFLAGS += $(shell pkg-config --cflags fmt)
+LDFLAGS += $(shell pkg-config --libs fmt)
 
 #
 # spdlog lib specific flags
 #
-CXXFLAGS += `pkg-config --cflags spdlog`
-LDFLAGS += `pkg-config --libs spdlog`
+CXXFLAGS += $(shell pkg-config --cflags spdlog)
+LDFLAGS += $(shell pkg-config --libs spdlog)
 
 #
 # Debug build settings
@@ -45,7 +45,7 @@ DBGLDFLAGS = -Og
 RELDIR = ../build/release
 RELOBJS = $(addprefix $(RELDIR)/, $(OBJS))
 RELTARGET = $(RELDIR)/$(TARGET)
-RELCXXFLAGS = -O3 -march=native -mtune=native -flto
+RELCXXFLAGS = -O3 -march=native -mtune=native -flto -DNDEBUG
 RELLDFLAGS = -O3 -march=native -mtune=native -flto=auto -s
 
 .PHONY: all prep debug release remake clean
@@ -61,7 +61,7 @@ debug: $(DBGTARGET)
 $(DBGTARGET): $(DBGOBJS)
 	$(CXX) $(LDFLAGS) $(DBGLDFLAGS) $^ -o $@
 
-$(DBGDIR)/Launch.o: Launch.cpp Application.hpp BidirectionalMultimessageSimulation.hpp Util.hpp
+$(DBGDIR)/Launch.o: Launch.cpp BidirectionalMultimessageSimulation.hpp Util.hpp
 	$(CXX) $(CXXFLAGS) $(DBGCXXFLAGS) $< -o $@
 
 $(DBGDIR)/Application.o: Application.cpp Application.hpp
@@ -80,7 +80,7 @@ release: $(RELTARGET)
 $(RELTARGET): $(RELOBJS)
 	$(CXX) $(LDFLAGS) $(RELLDFLAGS) $^ -o $@
 
-$(RELDIR)/Launch.o: Launch.cpp Application.hpp BidirectionalMultimessageSimulation.hpp Util.hpp
+$(RELDIR)/Launch.o: Launch.cpp BidirectionalMultimessageSimulation.hpp Util.hpp
 	$(CXX) $(CXXFLAGS) $(RELCXXFLAGS) $< -o $@
 
 $(RELDIR)/Application.o: Application.cpp Application.hpp

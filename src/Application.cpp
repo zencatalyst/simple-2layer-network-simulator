@@ -4,9 +4,13 @@
 #include <span>
 #include <string_view>
 #include <exception>
+#include <chrono>
 #include <cstdio>
+#include <cstdlib>
 #include <fmt/core.h>
+#include <fmt/chrono.h>
 #include <spdlog/spdlog.h>
+#include <spdlog/sinks/basic_file_sink.h>
 
 
 namespace simple_network_simulation
@@ -88,9 +92,10 @@ initialize_program( const std::span<const char* const> command_line_arguments ) 
 	constexpr auto display_version_arg         { "--version"sv };
 	constexpr auto display_help_arg            { "--help"sv };
 
-	const auto command_line_options { command_line_arguments.subspan( 1 ) };
+	std::error_condition initialization_result_code { };
 
-	for ( const std::string_view option : command_line_options )
+	for ( const auto command_line_options { command_line_arguments.subspan( 1 ) };
+		  const std::string_view option : command_line_options )
 	{
 		namespace sns = simple_network_simulation;
 
@@ -115,34 +120,186 @@ initialize_program( const std::span<const char* const> command_line_arguments ) 
 			try
 			{
 				sns::display_version( );
+				initialization_result_code = std::errc::operation_canceled;
 			}
 			catch ( const std::exception& ex )
 			{
-				spdlog::get( "basic_logger" )->critical( "{}", ex.what( ) );
-				return std::error_condition { std::errc::io_error };
+				spdlog::get( "basic_logger" )->error( "{}", ex.what( ) );
+				try
+				{
+					fmt::print( stderr, "\nSomething went wrong!\n\n" );
+				}
+				catch ( const std::exception& exc )
+				{
+					spdlog::get( "basic_logger" )->error( "{}", exc.what( ) );
+				}
+
+				initialization_result_code = std::errc::io_error;
 			}
 
-			return std::error_condition { std::errc::operation_canceled };
+			break;
 		}
 		else if ( option == display_help_arg )
 		{
 			try
 			{
 				sns::display_help( );
+				initialization_result_code = std::errc::operation_canceled;
 			}
 			catch ( const std::exception& ex )
 			{
-				spdlog::get( "basic_logger" )->critical( "{}", ex.what( ) );
-				return std::error_condition { std::errc::io_error };
+				spdlog::get( "basic_logger" )->error( "{}", ex.what( ) );
+				try
+				{
+					fmt::print( stderr, "\nSomething went wrong!\n\n" );
+				}
+				catch ( const std::exception& exc )
+				{
+					spdlog::get( "basic_logger" )->error( "{}", exc.what( ) );
+				}
+
+				initialization_result_code = std::errc::io_error;
 			}
 
-			return std::error_condition { std::errc::operation_canceled };
+			break;
 		}
 		else
 		{
-			return std::error_condition { std::errc::invalid_argument };
+			constexpr auto custom_error_message { "unrecognized command-line option"sv };
+			spdlog::get( "basic_logger" )->error( "{}", custom_error_message );
+			initialization_result_code = std::errc::invalid_argument;
+			try
+			{
+				fmt::print( stderr, "\n{0}: error: {1}: {2} ‘{3}’\n"
+									"See ‘{4}’ for more info on how to use the program\n\n",
+							sns::application_name, initialization_result_code.value( ),
+							custom_error_message, option, display_help_arg );
+			}
+			catch ( const std::exception& ex )
+			{
+				spdlog::get( "basic_logger" )->error( "{}", ex.what( ) );
+			}
+
+			break;
 		}
 	}
 
-	return std::error_condition { };
+	return initialization_result_code;
+}
+
+[[ nodiscard ]] bool
+register_exit_handlers( ) noexcept
+{
+	extern constinit const int exit_code;
+
+	constexpr auto quick_exit_handler { [ ]( )
+										{
+											spdlog::get( "basic_logger" )->critical(
+											  "Program terminated (exit code: {})", exit_code );
+											try
+											{
+												fmt::print(
+												  "Program terminated (exit code: {})\n\n", exit_code );
+											}
+											catch ( const std::exception& ex )
+											{
+												spdlog::get( "basic_logger" )->error( "{}", ex.what( ) );
+											}
+											spdlog::shutdown( );
+										} };
+
+	constexpr auto exit_handler { [ ]( )
+								  {
+									  try
+									  {
+										  if ( exit_code == EXIT_SUCCESS )
+										  {
+											  spdlog::get( "basic_logger" )->info(
+												"Program execution ended (exit code: {})", exit_code );
+											  fmt::print(
+												"Program execution ended (exit code: {})\n\n", exit_code );
+										  }
+										  else
+										  {
+											  spdlog::get( "basic_logger" )->error(
+												"Program exited abnormally (exit code: {})", exit_code );
+											  fmt::print(
+												"Program exited abnormally (exit code: {})\n\n", exit_code );
+										  }
+									  }
+									  catch ( const std::exception& ex )
+									  {
+										  spdlog::get( "basic_logger" )->error( "{}", ex.what( ) );
+									  }
+								  } };
+
+	bool is_registration_successful;
+
+	try
+	{
+		const auto quick_exit_handler_registration_result { std::at_quick_exit( quick_exit_handler ) };
+		if ( quick_exit_handler_registration_result != 0 ) [[ unlikely ]]
+			throw std::system_error { std::make_error_code( std::errc::operation_canceled ),
+									  "Quick exit handler registration failed" };
+
+		const auto exit_handler_registration_result { std::atexit( exit_handler ) };
+		if ( exit_handler_registration_result != 0 ) [[ unlikely ]]
+			throw std::system_error { std::make_error_code( std::errc::operation_canceled ),
+									  "Exit handler registration failed" };
+
+		is_registration_successful = true;
+	}
+	catch ( const std::system_error& se )
+	{
+		spdlog::get( "basic_logger" )->error( "{}", se.what( ) );
+		try
+		{
+			fmt::print( stderr, "\nSomething went wrong during program startup!\n\n" );
+		}
+		catch ( const std::exception& ex )
+		{
+			spdlog::get( "basic_logger" )->error( "{}", ex.what( ) );
+		}
+		spdlog::get( "basic_logger" )->flush( );
+
+		is_registration_successful = false;
+	}
+
+	return is_registration_successful;
+}
+
+[[ nodiscard ]] bool
+register_loggers( ) noexcept
+{
+	spdlog::file_event_handlers handlers;
+
+	handlers.after_open   = [ ]( const spdlog::filename_t filename, std::FILE* const stream )
+							{
+								fmt::print( stream, "\n[{}] [{}] Logging started...\n\n",
+											std::chrono::system_clock::now( ), filename );
+							};
+
+	handlers.before_close = [ ]( const spdlog::filename_t filename, std::FILE* const stream )
+							{
+								fmt::print( stream, "\n[{}] [{}] Logging finished.\n",
+											std::chrono::system_clock::now( ), filename );
+							};
+
+	bool is_registration_successful;
+
+	try
+	{
+		auto logger { spdlog::basic_logger_st( "basic_logger", "logs/basic-log.txt", true, handlers ) };
+		logger->set_level( spdlog::level::info );
+		logger->set_pattern( "[%Y-%m-%d %T.%f %z] [%n] [thread %t] [%l] %v" );
+		is_registration_successful = true;
+	}
+	catch ( const spdlog::spdlog_ex& sx )
+	{
+		fmt::print( stderr, "\nSomething went wrong during program startup: log file init failed: {}\n\n",
+							sx.what( ) );
+		is_registration_successful = false;
+	}
+
+	return is_registration_successful;
 }
