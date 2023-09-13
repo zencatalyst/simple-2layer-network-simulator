@@ -6,6 +6,8 @@
 #include <functional>
 #include <exception>
 #include <utility>
+#include <system_error>
+#include <cstdio>
 
 
 namespace simple_network_simulation::util
@@ -128,5 +130,51 @@ ScopedTimer( Callback&& ) -> ScopedTimer<>;
 
 template <class Duration>
 ScopedTimer( std::move_only_function<void ( Duration ) noexcept> ) -> ScopedTimer<Duration>;
+
+
+template <class Duration = std::chrono::microseconds>
+requires ( requires { std::chrono::time_point<std::chrono::system_clock, Duration>{ }; } )
+[[ nodiscard ]] auto inline
+retrieve_current_local_time( )
+{
+    using namespace std::chrono;
+    return zoned_time { current_zone( ), time_point_cast<Duration>( system_clock::now( ) ) };
+}
+
+void inline
+flush_all_streams( ) noexcept( false )
+{
+    if ( std::fflush( nullptr ) ) [[ unlikely ]]
+    {
+        throw std::system_error { std::make_error_code( std::errc::io_error ),
+                                  "Failure in flushing the streams" };
+    }
+
+    return;
+}
+
+void inline
+flush_stderr( ) noexcept( false )
+{
+    if ( std::fflush( stderr ) ) [[ unlikely ]]
+    {
+        throw std::system_error { std::make_error_code( std::errc::io_error ),
+                                  "Failure in flushing the stderr" };
+    }
+
+    return;
+}
+
+void inline
+flush_stdout( ) noexcept( false )
+{
+    if ( std::fflush( stdout ) ) [[ unlikely ]]
+    {
+        throw std::system_error { std::make_error_code( std::errc::io_error ),
+                                  "Failure in flushing the stdout" };
+    }
+
+    return;
+}
 
 }

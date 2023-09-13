@@ -50,10 +50,10 @@ launch( const std::span<const char* const> command_line_arguments, int& exit_cod
 
     try
     {
+        namespace sns = simple_network_simulation;
+
         fmt::print( "\n\nConnection simulation started...\n\n\n" );
-        std::fflush( stdout );
-        if ( std::ferror( stdout ) ) [[ unlikely ]]
-            throw std::system_error { std::make_error_code( std::errc::io_error ) };
+        sns::util::flush_stdout( );
 
         {
             const std::uint32_t node1_process1_num { 5001 };
@@ -61,17 +61,13 @@ launch( const std::span<const char* const> command_line_arguments, int& exit_cod
             const std::uint32_t node2_process1_num { 7001 };
             const std::uint32_t node2_process2_num { 7002 };
 
-            namespace sns = simple_network_simulation;
-
             std::jthread connection1_thread { sns::execute_connection1, node1_process1_num, node2_process2_num };
 
             std::jthread connection2_thread { sns::execute_connection2, node1_process2_num, node2_process1_num };
         }
 
         fmt::print( "\nConnection simulation finished...\n\n\n" );
-        std::fflush( stdout );
-        if ( std::ferror( stdout ) ) [[ unlikely ]]
-            throw std::system_error { std::make_error_code( std::errc::io_error ) };
+        sns::util::flush_stdout( );
 
         exit_code_OUT = EXIT_SUCCESS;
     }
@@ -95,6 +91,24 @@ launch( const std::span<const char* const> command_line_arguments, int& exit_cod
 [[ nodiscard ]] int inline static
 initiate( const int argc, const char* const* const argv ) noexcept
 {
+#if SNS_DEBUG == 1
+    {
+    using simple_network_simulation::util::ScopedTimer;
+    const ScopedTimer timer { [ ]( const auto duration ) noexcept
+                              {
+                                  spdlog::get( "basic_logger" )->debug( "Timer took {}", duration );
+                                  try
+                                  {
+                                      fmt::print( stderr, "\nTimer took {}\n", duration );
+                                  }
+                                  catch ( const std::exception& ex )
+                                  {
+                                      exit_code = EXIT_FAILURE;
+                                      spdlog::get( "basic_logger" )->error( "{}", ex.what( ) );
+                                  }
+                              } };
+#endif
+
     if ( const bool is_loggers_registration_successful { register_loggers( ) };
          is_loggers_registration_successful == false ) [[ unlikely ]]
     {
@@ -114,7 +128,6 @@ initiate( const int argc, const char* const* const argv ) noexcept
     try
     {
         std::jthread launch_thread { launch, command_line_arguments, std::ref( exit_code ) };
-        launch_thread.join( );
     }
     catch ( const std::exception& ex )
     {
@@ -129,6 +142,10 @@ initiate( const int argc, const char* const* const argv ) noexcept
             spdlog::get( "basic_logger" )->error( "{}", exc.what( ) );
         }
     }
+
+#if SNS_DEBUG == 1
+    }
+#endif
 
     return exit_code;
 }

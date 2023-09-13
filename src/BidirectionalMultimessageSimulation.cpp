@@ -95,7 +95,7 @@ node1_process1( const uint32_t process_num,
         {
             message.destination_port_num = 7002;
 
-            thread_local size_t node1_process1_request_counter { };
+            thread_local auto node1_process1_request_counter { 0uz };
 
             switch ( node1_process1_request_counter )
             {
@@ -172,7 +172,7 @@ node1_process2( const uint32_t process_num,
         {
             message.destination_port_num = 7001;
 
-            thread_local size_t node1_process2_request_counter { };
+            thread_local auto node1_process2_request_counter { 0uz };
 
             switch ( node1_process2_request_counter )
             {

@@ -4,13 +4,13 @@
 #include <span>
 #include <string_view>
 #include <exception>
-#include <chrono>
+#include <format>
 #include <cstdio>
 #include <cstdlib>
 #include <fmt/core.h>
-#include <fmt/chrono.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include "Util.hpp"
 
 
 namespace simple_network_simulation
@@ -29,6 +29,7 @@ There is NO WARRANTY, to the extent permitted by law.
 Written by Kasra Hashemi.
 
 )", application_name, application_version );
+    util::flush_stdout( );
 }
 
 void
@@ -67,6 +68,7 @@ Web <https://github.com/zencatalyst/simple-2layer-network-simulator>
 Documentation <https://github.com/zencatalyst/simple-2layer-network-simulator/blob/main/README.md>
 
 )", application_name );
+    util::flush_stdout( );
 }
 
 
@@ -81,6 +83,10 @@ set_channel_faults( const bool channel_faults_status ) noexcept;
 [[ nodiscard ]] std::error_condition
 initialize_program( const std::span<const char* const> command_line_arguments ) noexcept
 {
+    std::error_condition initialization_result_code { };
+
+    if ( std::empty( command_line_arguments ) ) [[ unlikely ]] return initialization_result_code;
+
     using std::string_view_literals::operator""sv;
 
     constexpr auto layers_delays_on_short_arg  { "-d"sv };
@@ -91,8 +97,6 @@ initialize_program( const std::span<const char* const> command_line_arguments ) 
     constexpr auto channel_faults_off_long_arg { "--channel-faults=off"sv };
     constexpr auto display_version_arg         { "--version"sv };
     constexpr auto display_help_arg            { "--help"sv };
-
-    std::error_condition initialization_result_code { };
 
     for ( const auto command_line_options { command_line_arguments.subspan( 1 ) };
           const std::string_view option : command_line_options )
@@ -192,7 +196,7 @@ register_exit_handlers( ) noexcept
 {
     extern constinit const int exit_code;
 
-    constexpr auto quick_exit_handler { [ ]( )
+    constexpr auto quick_exit_handler { [ ]
                                         {
                                             spdlog::get( "basic_logger" )->critical(
                                               "Program terminated (exit code: {})", exit_code );
@@ -205,33 +209,61 @@ register_exit_handlers( ) noexcept
                                             {
                                                 spdlog::get( "basic_logger" )->error( "{}", ex.what( ) );
                                             }
+
+                                            try
+                                            {
+                                                simple_network_simulation::util::flush_all_streams( );
+                                            }
+                                            catch ( const std::system_error& se )
+                                            {
+                                                spdlog::get( "basic_logger" )->critical( "{}", se.what( ) );
+                                                spdlog::get( "basic_logger" )->flush( );
+                                                spdlog::shutdown( );
+                                                throw;
+                                            }
+
+                                            spdlog::get( "basic_logger" )->flush( );
                                             spdlog::shutdown( );
                                         } };
 
-    constexpr auto exit_handler { [ ]( )
-                                  {
-                                      try
-                                      {
-                                          if ( exit_code == EXIT_SUCCESS )
-                                          {
-                                              spdlog::get( "basic_logger" )->info(
-                                                "Program execution ended (exit code: {})", exit_code );
-                                              fmt::print(
-                                                "Program execution ended (exit code: {})\n\n", exit_code );
-                                          }
-                                          else
-                                          {
-                                              spdlog::get( "basic_logger" )->error(
-                                                "Program exited abnormally (exit code: {})", exit_code );
-                                              fmt::print(
-                                                "Program exited abnormally (exit code: {})\n\n", exit_code );
-                                          }
-                                      }
-                                      catch ( const std::exception& ex )
-                                      {
-                                          spdlog::get( "basic_logger" )->error( "{}", ex.what( ) );
-                                      }
-                                  } };
+    constexpr auto exit_handler   { [ ]
+                                    {
+                                        try
+                                        {
+                                            if ( exit_code == EXIT_SUCCESS )
+                                            {
+                                                spdlog::get( "basic_logger" )->info(
+                                                  "Program execution ended (exit code: {})", exit_code );
+                                                fmt::print(
+                                                  "Program execution ended (exit code: {})\n\n", exit_code );
+                                            }
+                                            else
+                                            {
+                                                spdlog::get( "basic_logger" )->error(
+                                                  "Program exited abnormally (exit code: {})", exit_code );
+                                                fmt::print(
+                                                  "Program exited abnormally (exit code: {})\n\n", exit_code );
+                                            }
+                                        }
+                                        catch ( const std::exception& ex )
+                                        {
+                                            spdlog::get( "basic_logger" )->error( "{}", ex.what( ) );
+                                        }
+
+                                        try
+                                        {
+                                            simple_network_simulation::util::flush_all_streams( );
+                                        }
+                                        catch ( const std::system_error& se )
+                                        {
+                                            spdlog::get( "basic_logger" )->critical( "{}", se.what( ) );
+                                            spdlog::get( "basic_logger" )->flush( );
+                                            spdlog::shutdown( );
+                                            throw;
+                                        }
+
+                                        spdlog::get( "basic_logger" )->flush( );
+                                    } };
 
     bool is_registration_successful;
 
@@ -255,6 +287,7 @@ register_exit_handlers( ) noexcept
         try
         {
             fmt::print( stderr, "\nSomething went wrong during program startup!\n\n" );
+            simple_network_simulation::util::flush_stderr( );
         }
         catch ( const std::exception& ex )
         {
@@ -269,20 +302,28 @@ register_exit_handlers( ) noexcept
 }
 
 [[ nodiscard ]] bool
-register_loggers( ) noexcept
+register_loggers( ) noexcept( false )
 {
+    constexpr std::string_view dashes { "------------------------------------------------------------"
+                                        "------------------------------------------------------------" };
+    static_assert( std::size( dashes ) == 120 );
+
     spdlog::file_event_handlers handlers;
 
-    handlers.after_open   = [ ]( const spdlog::filename_t filename, std::FILE* const stream )
+    handlers.after_open   = [ dashes ]( const spdlog::filename_t filename, std::FILE* const stream )
                             {
-                                fmt::print( stream, "\n[{}] [{}] Logging started...\n\n",
-                                            std::chrono::system_clock::now( ), filename );
+                                using simple_network_simulation::util::retrieve_current_local_time;
+                                fmt::print( stream, "\n[{0}] [{1}] Logging started...\n{2}\n",
+                                            std::format( "{:%F (%a) %T %Ez %Z}", retrieve_current_local_time( ) ),
+                                            filename, dashes );
                             };
 
-    handlers.before_close = [ ]( const spdlog::filename_t filename, std::FILE* const stream )
+    handlers.before_close = [ dashes ]( const spdlog::filename_t filename, std::FILE* const stream )
                             {
-                                fmt::print( stream, "\n[{}] [{}] Logging finished.\n",
-                                            std::chrono::system_clock::now( ), filename );
+                                using simple_network_simulation::util::retrieve_current_local_time;
+                                fmt::print( stream, "{0}\n[{1}] [{2}] Logging finished.\n",
+                                            dashes, std::format( "{:%F (%a) %T %Ez %Z}", retrieve_current_local_time( ) ),
+                                            filename );
                             };
 
     bool is_registration_successful;
@@ -290,14 +331,20 @@ register_loggers( ) noexcept
     try
     {
         auto logger { spdlog::basic_logger_st( "basic_logger", "logs/basic-log.txt", true, handlers ) };
+#if SNS_DEBUG == 0
         logger->set_level( spdlog::level::info );
-        logger->set_pattern( "[%Y-%m-%d %T.%f %z] [%n] [thread %t] [%l] %v" );
+        logger->set_pattern( "[%Y-%m-%d (%a) %T.%f %z] [%n] [thread %t] [%l] %v" );
+#else
+        logger->set_level( spdlog::level::debug );
+        logger->set_pattern( "[%Y-%m-%d (%a) %T.%f %z] [%n] [thread %t] [%l] [%@] %v" );
+#endif
         is_registration_successful = true;
     }
-    catch ( const spdlog::spdlog_ex& sx )
+    catch ( const std::exception& ex )
     {
         fmt::print( stderr, "\nSomething went wrong during program startup: log file init failed: {}\n\n",
-                            sx.what( ) );
+                    ex.what( ) );
+        simple_network_simulation::util::flush_stderr( );
         is_registration_successful = false;
     }
 
