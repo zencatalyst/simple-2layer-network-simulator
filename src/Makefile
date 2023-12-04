@@ -17,22 +17,28 @@ LDFLAGS = -pie
 #
 # Project files
 #
-DEPS = Application.hpp BidirectionalMultimessageSimulation.hpp Util.hpp Formatters.hpp
+DEPS = Application.hpp BidirectionalMultimessageSimulation.hpp Util.hpp Formatters.hpp PlatformMacros.hpp
 SRCS = Launch.cpp Application.cpp BidirectionalMultimessageSimulation.cpp
 OBJS = $(SRCS:.cpp=.o)
 TARGET = Simple-2Layer-Network-Simulator
 
 #
-# {fmt} lib specific flags
+# {fmt} library specific flags
 #
 CXXFLAGS += $(shell pkg-config --cflags fmt)
 LDFLAGS += $(shell pkg-config --libs fmt)
 
 #
-# spdlog lib specific flags
+# spdlog library specific flags
 #
 CXXFLAGS += $(shell pkg-config --cflags spdlog)
 LDFLAGS += $(shell pkg-config --libs spdlog)
+
+#
+# GLib library specific flags
+#
+CXXFLAGS += $(shell pkg-config --cflags glib-2.0)
+LDFLAGS += $(shell pkg-config --libs glib-2.0)
 
 #
 # Debug build settings
@@ -68,7 +74,7 @@ $(DBGTARGET): $(DBGOBJS)
 $(DBGDIR)/Launch.o: Launch.cpp BidirectionalMultimessageSimulation.hpp Util.hpp
 	$(CXX) $(CXXFLAGS) $(DBGCXXFLAGS) $< -o $@
 
-$(DBGDIR)/Application.o: Application.cpp Application.hpp Util.hpp
+$(DBGDIR)/Application.o: Application.cpp Application.hpp Util.hpp PlatformMacros.hpp
 	$(CXX) $(CXXFLAGS) $(DBGCXXFLAGS) $< -o $@
 
 $(DBGDIR)/BidirectionalMultimessageSimulation.o: BidirectionalMultimessageSimulation.cpp \
@@ -87,7 +93,7 @@ $(RELTARGET): $(RELOBJS)
 $(RELDIR)/Launch.o: Launch.cpp BidirectionalMultimessageSimulation.hpp Util.hpp
 	$(CXX) $(CXXFLAGS) $(RELCXXFLAGS) $< -o $@
 
-$(RELDIR)/Application.o: Application.cpp Application.hpp Util.hpp
+$(RELDIR)/Application.o: Application.cpp Application.hpp Util.hpp PlatformMacros.hpp
 	$(CXX) $(CXXFLAGS) $(RELCXXFLAGS) $< -o $@
 
 $(RELDIR)/BidirectionalMultimessageSimulation.o: BidirectionalMultimessageSimulation.cpp \

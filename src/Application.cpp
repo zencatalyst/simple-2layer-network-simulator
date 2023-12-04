@@ -5,12 +5,17 @@
 #include <string_view>
 #include <exception>
 #include <format>
+#include <filesystem>
 #include <cstdio>
 #include <cstdlib>
+#include <unistd.h>
+#include <pwd.h>
 #include <fmt/core.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include <glib.h>
 #include "Util.hpp"
+#include "PlatformMacros.hpp"
 
 
 namespace simple_network_simulation
@@ -308,6 +313,10 @@ register_loggers( ) noexcept( false )
                                         "------------------------------------------------------------" };
     static_assert( std::size( dashes ) == 120 );
 
+    constexpr std::string_view asterisks { "************************************************************"
+                                           "************************************************************" };
+    static_assert( std::size( asterisks ) == 120 );
+
     spdlog::file_event_handlers handlers;
 
     handlers.after_open   = [ dashes ]( const spdlog::filename_t filename, std::FILE* const stream )
@@ -315,22 +324,59 @@ register_loggers( ) noexcept( false )
                                 using simple_network_simulation::util::retrieve_current_local_time;
                                 fmt::print( stream, "\n[{0}] [{1}] Logging started...\n{2}\n",
                                             std::format( "{:%F (%a) %T %Ez %Z}", retrieve_current_local_time( ) ),
-                                            filename, dashes );
+                                            filename,
+                                            dashes );
                             };
 
-    handlers.before_close = [ dashes ]( const spdlog::filename_t filename, std::FILE* const stream )
+    handlers.before_close = [ dashes, asterisks ]( const spdlog::filename_t filename, std::FILE* const stream )
                             {
                                 using simple_network_simulation::util::retrieve_current_local_time;
-                                fmt::print( stream, "{0}\n[{1}] [{2}] Logging finished.\n",
-                                            dashes, std::format( "{:%F (%a) %T %Ez %Z}", retrieve_current_local_time( ) ),
-                                            filename );
+                                fmt::print( stream, "{0}\n[{1}] [{2}] Logging finished.\n\n{3}\n",
+                                            dashes,
+                                            std::format( "{:%F (%a) %T %Ez %Z}", retrieve_current_local_time( ) ),
+                                            filename,
+                                            asterisks );
                             };
 
     bool is_registration_successful;
 
+    constexpr std::string_view log_file_name { "basic-log.txt" };
+    std::string_view home_dir;
+    std::string_view logs_dir;
+
+#ifndef PLATFORM_NAME
+#   error "'PlatformMacros.hpp' header not included in the current file."
+#elif PLATFORM_NAME == OS_GNULINUX
+    if ( const gchar* const xdg_state_home { g_get_user_state_dir( ) }; xdg_state_home != nullptr )
+    {
+        home_dir = xdg_state_home;
+        logs_dir = "Simple-2Layer-Network-Simulator/logs";
+    }
+    else if ( const char* const user_home { std::getenv( "HOME" ) }; user_home != nullptr )
+    {
+        home_dir = user_home;
+        logs_dir = ".local/state/Simple-2Layer-Network-Simulator/logs";
+    }
+    else
+    {
+        home_dir = getpwuid( getuid( ) )->pw_dir;
+        logs_dir = ".local/state/Simple-2Layer-Network-Simulator/logs";
+    }
+#elif PLATFORM_NAME == OS_WINDOWS
+#   error "Windows code not fully implemented yet."
+#elif PLATFORM_NAME == OS_MACOS
+#   error "macOS code not fully implemented yet."
+#endif
+
     try
     {
-        auto logger { spdlog::basic_logger_st( "basic_logger", "logs/basic-log.txt", true, handlers ) };
+        std::filesystem::path log_file_path;
+        log_file_path /= home_dir;
+        log_file_path /= logs_dir;
+        log_file_path /= log_file_name;
+
+        auto logger { spdlog::basic_logger_st( "basic_logger", log_file_path, false, handlers ) };
+
 #if SNS_DEBUG == 0
         logger->set_level( spdlog::level::info );
         logger->set_pattern( "[%Y-%m-%d (%a) %T.%f %z] [%n] [thread %t] [%l] %v" );
