@@ -8,14 +8,11 @@
 #include <filesystem>
 #include <cstdio>
 #include <cstdlib>
-#include <unistd.h>
-#include <pwd.h>
 #include <fmt/core.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <glib.h>
 #include "Util.hpp"
-#include "PlatformMacros.hpp"
 
 
 namespace simple_network_simulation
@@ -338,41 +335,18 @@ register_loggers( ) noexcept( false )
                                             asterisks );
                             };
 
-    bool is_registration_successful;
-
+    const std::string_view user_state_dir { g_get_user_state_dir( ) };
+    constexpr std::string_view app_logs_dir { "Simple-2Layer-Network-Simulator/logs" };
     constexpr std::string_view log_file_name { "basic-log.txt" };
-    std::string_view home_dir;
-    std::string_view logs_dir;
 
-#ifndef PLATFORM_NAME
-#   error "'PlatformMacros.hpp' header not included in the current file."
-#elif PLATFORM_NAME == OS_GNULINUX
-    if ( const gchar* const xdg_state_home { g_get_user_state_dir( ) }; xdg_state_home != nullptr )
-    {
-        home_dir = xdg_state_home;
-        logs_dir = "Simple-2Layer-Network-Simulator/logs";
-    }
-    else if ( const char* const user_home { std::getenv( "HOME" ) }; user_home != nullptr )
-    {
-        home_dir = user_home;
-        logs_dir = ".local/state/Simple-2Layer-Network-Simulator/logs";
-    }
-    else
-    {
-        home_dir = getpwuid( getuid( ) )->pw_dir;
-        logs_dir = ".local/state/Simple-2Layer-Network-Simulator/logs";
-    }
-#elif PLATFORM_NAME == OS_WINDOWS
-#   error "Windows code not fully implemented yet."
-#elif PLATFORM_NAME == OS_MACOS
-#   error "macOS code not fully implemented yet."
-#endif
+    std::filesystem::path log_file_path;
+
+    bool is_registration_successful;
 
     try
     {
-        std::filesystem::path log_file_path;
-        log_file_path /= home_dir;
-        log_file_path /= logs_dir;
+        log_file_path /= user_state_dir;
+        log_file_path /= app_logs_dir;
         log_file_path /= log_file_name;
 
         auto logger { spdlog::basic_logger_st( "basic_logger", log_file_path, false, handlers ) };

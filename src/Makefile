@@ -74,7 +74,7 @@ $(DBGTARGET): $(DBGOBJS)
 $(DBGDIR)/Launch.o: Launch.cpp BidirectionalMultimessageSimulation.hpp Util.hpp
 	$(CXX) $(CXXFLAGS) $(DBGCXXFLAGS) $< -o $@
 
-$(DBGDIR)/Application.o: Application.cpp Application.hpp Util.hpp PlatformMacros.hpp
+$(DBGDIR)/Application.o: Application.cpp Application.hpp Util.hpp
 	$(CXX) $(CXXFLAGS) $(DBGCXXFLAGS) $< -o $@
 
 $(DBGDIR)/BidirectionalMultimessageSimulation.o: BidirectionalMultimessageSimulation.cpp \
@@ -93,7 +93,7 @@ $(RELTARGET): $(RELOBJS)
 $(RELDIR)/Launch.o: Launch.cpp BidirectionalMultimessageSimulation.hpp Util.hpp
 	$(CXX) $(CXXFLAGS) $(RELCXXFLAGS) $< -o $@
 
-$(RELDIR)/Application.o: Application.cpp Application.hpp Util.hpp PlatformMacros.hpp
+$(RELDIR)/Application.o: Application.cpp Application.hpp Util.hpp
 	$(CXX) $(CXXFLAGS) $(RELCXXFLAGS) $< -o $@
 
 $(RELDIR)/BidirectionalMultimessageSimulation.o: BidirectionalMultimessageSimulation.cpp \
