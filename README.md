@@ -18,7 +18,7 @@ The executable will appear inside `simple-2layer-network-simulator/build/release
 Just run the program in the shell:
 
 ```shell
-$ (cd build/release/ && ./Simple-2Layer-Network-Simulator)
+$ ./build/release/Simple-2Layer-Network-Simulator
 ```
 
 Additionally, 8 command-line options can be used:
@@ -35,7 +35,7 @@ Additionally, 8 command-line options can be used:
 Example:
 
 ```shell
-$ (cd build/release/ && ./Simple-2Layer-Network-Simulator -f)
+$ ./build/release/Simple-2Layer-Network-Simulator -f
 ```
 
 ## Contributing
@@ -55,6 +55,7 @@ Contributions, issues, and feature requests are welcome.<br />
 
 * {fmt} ([MIT License](https://github.com/fmtlib/fmt/blob/master/LICENSE.rst))
 * spdlog ([MIT License](https://github.com/gabime/spdlog/blob/v1.x/LICENSE))
+* GLib ([LGPL-2.1-or-later](https://gitlab.gnome.org/GNOME/glib/-/blob/main/LICENSES/LGPL-2.1-or-later.txt?ref_type=heads))
 
 ### License
 
