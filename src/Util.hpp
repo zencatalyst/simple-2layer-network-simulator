@@ -177,4 +177,13 @@ flush_stdout( ) noexcept( false )
     return;
 }
 
+[[ nodiscard ]] bool
+contains_only_a_single_occurrence_of( const std::string_view range, const std::string_view value ) noexcept
+{
+}
+
+std::pair<bool, > does_text_file_exist( const std::string_view filename )
+{
+}
+
 }
